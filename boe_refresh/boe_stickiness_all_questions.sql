@@ -45,3 +45,5 @@ left join
 group by all 
 )
 select sum(join_before_download) as join_before_download, sum(join_with_download) as join_with_download, sum(join_after_download) as join_after_download, sum(no_account) as no_account from agg 
+
+--how did users search in their first visit
