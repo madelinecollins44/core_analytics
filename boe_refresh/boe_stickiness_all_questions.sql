@@ -54,7 +54,6 @@ select
   , a.download_date
   , b._date as visit_date 
   , b.visit_id
-  , timestamp_seconds(b.start_datetime) as start_time
 from etsy-data-warehouse-dev.semanuele.boe_stickiness_all a 
 inner join etsy-data-warehouse-prod.weblog.visits b
   on (a.user_id=b.user_id or a.user_id is null and b.user_id is null)
