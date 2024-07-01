@@ -99,6 +99,14 @@ select
   , count(distinct query) as unique_queries
   , 
 
+, agg as (
+select
+  user_id
+  , browser_id
+  , count(visit_id) as num_searches
+  , count(distinct query) as unique_queries
+  , 
+
 
 --most common search queries in first day visits 
 with words as (
