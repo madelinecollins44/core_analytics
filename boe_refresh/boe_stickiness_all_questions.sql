@@ -48,8 +48,7 @@ select sum(join_before_download) as join_before_download, sum(join_with_download
 
 --how did users search in their first visit
 create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit as (
-with first_visit as 
-(select 
+select 
   a.user_id
   , a.browser_id
   , a.download_date
@@ -66,6 +65,4 @@ where
   and b._date >= "2022-01-01"
   and b.platform in ('boe')
   and a.download_date=b._date
-)
-select * from first_visit having min(start_time)
 ); 
