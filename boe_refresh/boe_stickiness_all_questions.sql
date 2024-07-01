@@ -68,6 +68,7 @@ where
 ); 
 
 --get engagmenet around query 
+create or replace table etsy-data-warehouse-dev.madelinecollins.boe_stickiness_had_search_first_visit_queries as (
 select 
   a.user_id
   , a.browser_id
@@ -88,6 +89,16 @@ left join etsy-data-warehouse-prod.search.query_bins c
 where 
   b.platform in ('boe')
   and b._date >= '2022-01-01'
+);
+
+, agg as (
+select
+  user_id
+  , browser_id
+  , count(visit_id) as num_searches
+  , count(distinct query) as unique_queries
+  , 
+
 
 --most common search queries in first day visits 
 with words as (
