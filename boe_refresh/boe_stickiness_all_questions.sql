@@ -104,9 +104,14 @@ where
 select
   word
   , count(visit_id) as searches 
+  , count(distinct a.user_id) as users
+  , count(distinct a.browser_id) as browsers
 from 
   etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit a
 inner join 
   words
     using (visit_id)
 group by all order by 2 desc 
+
+
+
