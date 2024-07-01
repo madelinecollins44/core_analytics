@@ -46,7 +46,8 @@ group by all
 )
 select sum(join_before_download) as join_before_download, sum(join_with_download) as join_with_download, sum(join_after_download) as join_after_download, sum(no_account) as no_account from agg 
 
---how did users search in their first visit
+---------HOW DID USERS SEARCH IN THEIR FIRST VISIT
+--make table with visit_ids on day of download for user + browser
 create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit as (
 select 
   a.user_id
@@ -65,3 +66,25 @@ where
   and b.platform in ('boe')
   and a.download_date=b._date
 ); 
+
+--get engagmenet around query 
+select 
+  a.user_id
+  , a.browser_id
+  , a.visit_id
+  , b.query
+  , c.bin
+  , b.has_click
+  , b.has_favorite
+  , b.has_cart	
+  , b.has_purchase
+from 
+  etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit a
+left join 
+  etsy-data-warehouse-prod.search.query_sessions_new b
+    using (visit_id)
+left join etsy-data-warehouse-prod.search.query_bins c
+  on b.query_raw=c.query_raw
+where 
+  b.platform in ('boe')
+  and b._date >= '2022-01-01'
