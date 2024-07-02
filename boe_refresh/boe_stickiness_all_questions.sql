@@ -162,3 +162,67 @@ b.bin
  from etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit a
  join `etsy-data-warehouse-prod.rollups.query_level_metrics_raw` b  using (query_raw)
  group by all
+
+----FUNNEL VIEW 
+--overall 
+with overall as (
+select
+  b.user_id
+  , b.browser_id
+  , count(distinct b.visit_id) as boe_visits
+  , count(distinct a.visit_id) as search_visits
+  , sum(has_click) as clicks
+  , sum(has_favorite) as favorites
+  , sum(has_cart) as carts
+  , sum(has_purchase) as purchases
+  , avg(max_page) as pagnation
+from 
+  etsy-data-warehouse-prod.weblog.visits b 
+left join 
+  (select * from `etsy-data-warehouse-prod.search.query_sessions_new` where _date >= "2022-01-01" and _date <= "2023-06-01") a -- need to break this out to include nulls from this table 
+    using (visit_id)
+where 
+  (b._date >= "2022-01-01" and b._date <= "2023-06-01")
+  and b.platform in ('boe')
+  group by all
+)
+select 
+  count(browser_id) as browsers
+  , count(case when search_visits > 0 then browser_id end) as browsers_with_search
+  , count(case when clicks > 0 then browser_id end) as browsers_with_clicks
+  , count(case when favorites > 0 then browser_id end) as browsers_with_favorites
+  , count(case when carts > 0 then browser_id end) as browsers_with_carts
+  , count(case when purchases > 0 then browser_id end) as browsers_with_purchases
+  , avg(pagnation) as pagnation
+from overall
+
+--first time visits 
+with first_visit as (
+select
+  a.user_id
+  , a.browser_id
+  , case when b.browser_id is not null then 1 else 0 end as searched
+  , sum(has_click) as clicks
+  , sum(has_favorite) as favorites
+  , sum(has_cart) as carts
+  , sum(has_purchase) as purchases
+  , avg(max_page) as pagnation
+from 
+  etsy-data-warehouse-dev.semanuele.boe_stickiness_all a 
+left join 
+  etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit b
+    using (user_id, browser_id)
+group by all 
+)
+select 
+    count(browser_id) as browsers
+  , count(case when searched > 0 then browser_id end) as browsers_with_search
+  , count(case when clicks > 0 then browser_id end) as browsers_with_clicks
+  , count(case when favorites > 0 then browser_id end) as browsers_with_favorites
+  , count(case when carts > 0 then browser_id end) as browsers_with_carts
+  , count(case when purchases > 0 then browser_id end) as browsers_with_purchases
+  , avg(pagnation) as pagnation
+from first_visit
+group by all 
+
+
