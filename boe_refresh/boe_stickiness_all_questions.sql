@@ -164,7 +164,40 @@ b.bin
  group by all
 
 ----FUNNEL VIEW 
---overall 
+--first boe visit
+with first_visit as (
+select
+  a.user_id
+  , a.browser_id
+  , sum(has_click) as clicks
+  , sum(has_favorite) as favorites
+  , sum(has_cart) as carts
+  , sum(has_purchase) as purchases
+  , avg(max_page) as pagnation
+  , case when b.browser_id is not null then 1 else 0 end as searched
+  , case when sum(has_click)> 0 then 1 else 0 end as had_click
+  , case when sum(has_favorite)> 0 then 1 else 0 end as had_favorite
+  , case when sum(has_cart)> 0 then 1 else 0 end as had_cart
+  , case when sum(has_purchase)> 0 then 1 else 0 end as had_purchase
+from 
+  etsy-data-warehouse-dev.semanuele.boe_stickiness_all a 
+left join 
+  etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit b
+    using (user_id, browser_id)
+group by all 
+)
+select 
+  count(*) as total_visits
+  , sum(searched) as total_search_visits 
+  , sum(had_click) as had_click
+  , sum(had_favorite) as had_favorite
+  , sum(had_cart) as had_cart
+  , sum(had_purchase) as had_purchase
+  , avg(pagnation) as pagnation
+from first_visit
+group by all 
+
+--overall funnel
 with overall as (
 select
   b.user_id
@@ -176,6 +209,11 @@ select
   , sum(has_cart) as carts
   , sum(has_purchase) as purchases
   , avg(max_page) as pagnation
+  , case when count(distinct a.visit_id) > 0 then 1 else 0 end as had_search_visit
+  , case when sum(has_click)> 0 then 1 else 0 end as had_click
+  , case when sum(has_favorite)> 0 then 1 else 0 end as had_favorite
+  , case when sum(has_cart)> 0 then 1 else 0 end as had_cart
+  , case when sum(has_purchase)> 0 then 1 else 0 end as had_purchase
 from 
   etsy-data-warehouse-prod.weblog.visits b 
 left join 
@@ -196,50 +234,12 @@ where
   and b.platform in ('boe')
   group by all
 )
---1.7% of browsers have more than 1 user, exclude these edge cases 
-, to_remove as (
-    select browser_id, count(distinct user_id) as users from overall group by all order by 2 desc
-  )
 select 
-  count(browser_id) as browsers
-  , count(case when search_visits > 0 then browser_id end) as browsers_with_search
-  , count(case when clicks > 0 then browser_id end) as browsers_with_clicks
-  , count(case when favorites > 0 then browser_id end) as browsers_with_favorites
-  , count(case when carts > 0 then browser_id end) as browsers_with_carts
-  , count(case when purchases > 0 then browser_id end) as browsers_with_purchases
+  count(*) as total_visits
+  , sum(had_search_visit) as total_search_visits 
+  , sum(had_click) as had_click
+  , sum(had_favorite) as had_favorite
+  , sum(had_cart) as had_cart
+  , sum(had_purchase) as had_purchase
   , avg(pagnation) as pagnation
-from overall a
-left join to_remove r 
-  using(browser_id)
-where r.browser_id is null
-
---first time visits 
-with first_visit as (
-select
-  a.user_id
-  , a.browser_id
-  , case when b.browser_id is not null then 1 else 0 end as searched
-  , sum(has_click) as clicks
-  , sum(has_favorite) as favorites
-  , sum(has_cart) as carts
-  , sum(has_purchase) as purchases
-  , avg(max_page) as pagnation
-from 
-  etsy-data-warehouse-dev.semanuele.boe_stickiness_all a 
-left join 
-  etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit b
-    using (user_id, browser_id)
-group by all 
-)
-select 
-    count(browser_id) as browsers
-  , count(case when searched > 0 then browser_id end) as browsers_with_search
-  , count(case when clicks > 0 then browser_id end) as browsers_with_clicks
-  , count(case when favorites > 0 then browser_id end) as browsers_with_favorites
-  , count(case when carts > 0 then browser_id end) as browsers_with_carts
-  , count(case when purchases > 0 then browser_id end) as browsers_with_purchases
-  , avg(pagnation) as pagnation
-from first_visit
-group by all 
-
-
+from overall
