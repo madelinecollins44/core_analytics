@@ -179,13 +179,27 @@ select
 from 
   etsy-data-warehouse-prod.weblog.visits b 
 left join 
-  (select * from `etsy-data-warehouse-prod.search.query_sessions_new` where _date >= "2022-01-01" and _date <= "2023-06-01") a -- need to break this out to include nulls from this table 
-    using (visit_id)
+  (select 
+    visit_id
+    , sum(has_click) as has_click
+    , sum(has_favorite) as has_favorite
+    , sum(has_cart) as has_cart
+    , sum(has_purchase) as has_purchase
+    , avg(max_page) as max_page
+  from 
+    `etsy-data-warehouse-prod.search.query_sessions_new` 
+  where _date >= "2022-01-01" and _date <= "2023-06-01"
+  group by all ) a -- need to break this out to include nulls from this table 
+      using (visit_id)
 where 
   (b._date >= "2022-01-01" and b._date <= "2023-06-01")
   and b.platform in ('boe')
   group by all
 )
+--1.7% of browsers have more than 1 user, exclude these edge cases 
+, to_remove as (
+    select browser_id, count(distinct user_id) as users from overall group by all order by 2 desc
+  )
 select 
   count(browser_id) as browsers
   , count(case when search_visits > 0 then browser_id end) as browsers_with_search
@@ -194,7 +208,10 @@ select
   , count(case when carts > 0 then browser_id end) as browsers_with_carts
   , count(case when purchases > 0 then browser_id end) as browsers_with_purchases
   , avg(pagnation) as pagnation
-from overall
+from overall a
+left join to_remove r 
+  using(browser_id)
+where r.browser_id is null
 
 --first time visits 
 with first_visit as (
