@@ -56,6 +56,7 @@ create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_ha
     a.visit_id,
     a.query_raw,
     a.query,
+    a.query_session_id,
     a.has_click,
     a.has_favorite,
     a.has_cart,
