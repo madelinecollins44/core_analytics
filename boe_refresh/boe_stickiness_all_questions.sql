@@ -75,7 +75,7 @@ create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_ha
   group by all
 );
 
---pull all data associated w queries in visits on first day 
+--base table 2: pull all data associated w queries in visits on first day 
 create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit_whole_day as ( -- stole this logic from sam 
  select
     b.browser_id,
