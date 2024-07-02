@@ -47,25 +47,30 @@ group by all
 select sum(join_before_download) as join_before_download, sum(join_with_download) as join_with_download, sum(join_after_download) as join_after_download, sum(no_account) as no_account from agg 
 
 ---------HOW DID USERS SEARCH IN THEIR FIRST VISIT
---make table with visit_ids on day of download for user + browser
--- create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit as (
--- select 
---   a.user_id
---   , a.browser_id
---   , a.download_date
---   , b._date as visit_date 
---   , b.visit_id
--- from etsy-data-warehouse-dev.semanuele.boe_stickiness_all a 
--- inner join etsy-data-warehouse-prod.weblog.visits b
---   on (a.user_id=b.user_id or a.user_id is null and b.user_id is null)
---   and a.browser_id=b.browser_id
---   and a.download_date=b._date
--- where 
---   a.had_search_first_visit = 1
---   and b._date >= "2022-01-01"
---   and b.platform in ('boe')
---   and a.download_date=b._date
--- ); 
+--pull first visit id here
+--issue: seems like more browsers are getting pulled in here 
+create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit as ( -- stole this logic from sam 
+ select
+    b.browser_id,
+    b.user_id,
+    b.download_date,
+    a.query_raw,
+    a.query,
+    a.has_click,
+    a.has_favorite,
+    a.has_cart,
+    a.has_purchase,
+    a.max_page
+  from `etsy-data-warehouse-prod.search.query_sessions_new` a 
+  join `etsy-data-warehouse-dev.semanuele.browsers_of_interest` b
+    on split(a.visit_id, ".")[offset(0)] = b.browser_id
+    and a.visit_id=b.visit_id
+  where 
+    a._date >= "2022-01-01" and a._date <= "2023-06-01"
+    and a.platform in ('boe')
+  group by all
+);
+ 
 
   --pull all data associated w queries in visits on first day 
 create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit as ( -- stole this logic from sam 
