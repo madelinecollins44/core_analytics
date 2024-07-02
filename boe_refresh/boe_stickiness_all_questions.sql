@@ -121,9 +121,9 @@ limit 50
 
 --signed in vs signed out,total engagement metrics, pagnation
 select
-  count(case when user_id is null then query end) as signed_out_searches
-  , count(case when user_id is not null then query end) as signed_in_searches
-  , count(query) as searches
+  count(case when user_id is null then query_session_id end) as signed_out_query_sessions
+  , count(case when user_id is not null then query_session_id end) as signed_in_query_sessions
+  , count(query_session_id) as query_sessions
   , sum(has_click) as clicks
   , sum(has_favorite) as favorites
   , sum(has_cart) as carts
@@ -131,11 +131,29 @@ select
   , avg(max_page) as pagnation
   from etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit
 
---`etsy-data-warehouse-prod.arizona.query_intent_labels`
-   qi.inference.label 
+  --overall metrics 
+select
+count(query)
+, sum(has_click)
+, sum(has_favorite) as favorites
+, sum(has_cart) as carts
+, sum(has_purchase) as purchases
+, avg(max_page) as pagnation
+  from `etsy-data-warehouse-prod.search.query_sessions_new` a 
+where _date >= current_date-730
 
+--type of queries
+select
+b.inference.label 
+, count(query_session_id)
+ from etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit a
+ join `etsy-data-warehouse-prod.arizona.query_intent_labels` b  using (query_raw)
+ group by all 
 
-
-
-
-
+--bins 
+select 
+b.bin
+, count(a.query_session_id) as sessions
+ from etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit a
+ join `etsy-data-warehouse-prod.rollups.query_level_metrics_raw` b  using (query_raw)
+ group by all
