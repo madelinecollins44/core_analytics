@@ -66,32 +66,19 @@ select sum(join_before_download) as join_before_download, sum(join_with_download
 --   and b.platform in ('boe')
 --   and a.download_date=b._date
 -- ); 
-create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit as (
-select 
-  a.user_id
-  , a.browser_id
-  , a.download_date
-  , b._date as visit_date 
-  , b.visit_id
-from 
-  (select 
-    user_id
-    , browser_id
-    , download_date
-    , concat(user_id, '-', browser_id) as key
-  from etsy-data-warehouse-dev.semanuele.boe_stickiness_all
-  where had_search_first_visit = 1) a 
-inner join 
-  (select 
-    user_id
-    , browser_id
-    , visit_id
-    , _date
-    , concat(user_id, '-', browser_id) as key
-    from etsy-data-warehouse-prod.weblog.visits
-    where _date >= '2022-01-01' and platform in ('boe')) b
-  on a.key=b.key
-  and a.download_date=b._date
+create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit as ( -- stole this logic from sam 
+  select
+    b.browser_id,
+    b.user_id,
+    b.download_date,
+    a.visit_id as search_visit_id,
+    a.query_raw,
+    a.query
+  from `etsy-data-warehouse-prod.search.query_sessions_new` a 
+  join `etsy-data-warehouse-dev.semanuele.browsers_of_interest` b
+    on split(a.visit_id, ".")[offset(0)] = b.browser_id
+    and a._date = b.download_date -- only looks at visits from day of download, added this in from sam's 
+  where a._date >= "2022-01-01" and a._date <= "2023-06-01"
 ); 
 
 --get engagmenet around query 
