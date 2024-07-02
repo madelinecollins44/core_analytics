@@ -118,24 +118,18 @@ where
 with words as (
 select 
   word
- , visit_id
-from 
-  etsy-data-warehouse-prod.search.query_sessions_new, 
+ , search_visit_id as visit_id
+ , user_id
+ , browser_id
+from etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit,
 unnest(split(query, ' ')) as word
-where 
-  platform in ('boe')
-  and _date >= '2022-01-01'
 )
 select
   word
   , count(visit_id) as searches 
-  , count(distinct a.user_id) as users
-  , count(distinct a.browser_id) as browsers
-from 
-  etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit a
-inner join 
-  words
-    using (visit_id)
+  , count(distinct user_id) as users
+  , count(distinct browser_id) as browsers
+from words
 group by all order by 2 desc 
 
 
