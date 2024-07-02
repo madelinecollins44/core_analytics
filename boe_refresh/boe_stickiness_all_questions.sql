@@ -75,28 +75,33 @@ create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_ha
   group by all
 );
 
-
-  --pull all data associated w queries in visits on first day 
-create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit as ( -- stole this logic from sam 
-  select
+--pull all data associated w queries in visits on first day 
+create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit_whole_day as ( -- stole this logic from sam 
+ select
     b.browser_id,
     b.user_id,
     b.download_date,
-    a._date,
-    a.visit_id as search_visit_id,
+    a.visit_id,
     a.query_raw,
     a.query,
+    a.query_session_id,
     a.has_click,
     a.has_favorite,
     a.has_cart,
     a.has_purchase,
     a.max_page
-  from `etsy-data-warehouse-prod.search.query_sessions_new` a 
-  join `etsy-data-warehouse-dev.semanuele.browsers_of_interest` b
+  from 
+    (select browser_id, user_id, download_date from etsy-data-warehouse-dev.semanuele.boe_stickiness_all where had_search_first_visit =1) b
+  inner join 
+    `etsy-data-warehouse-prod.search.query_sessions_new` a 
     on split(a.visit_id, ".")[offset(0)] = b.browser_id
-    and a._date = b.download_date -- only looks at visits from day of download 
-  where a._date >= "2022-01-01" and a._date <= "2023-06-01"
+    and b.download_date=a._date
+  where 
+    a._date >= "2022-01-01" and a._date <= "2023-06-01"
+    and a.platform in ('boe')
+  group by all
 );
+
 
 --engagements around query 
 --switch out base tables to get different levels of interaction 
