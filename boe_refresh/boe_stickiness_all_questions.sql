@@ -48,7 +48,6 @@ select sum(join_before_download) as join_before_download, sum(join_with_download
 
 ---------HOW DID USERS SEARCH IN THEIR FIRST VISIT
 --pull first visit id here
---issue: seems like more browsers are getting pulled in here 
 create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit as ( -- stole this logic from sam 
  select
     b.browser_id,
@@ -65,6 +64,9 @@ create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_ha
   join `etsy-data-warehouse-dev.semanuele.browsers_of_interest` b
     on split(a.visit_id, ".")[offset(0)] = b.browser_id
     and a.visit_id=b.visit_id
+  join 
+    etsy-data-warehouse-dev.semanuele.boe_stickiness_all c
+    on b.browser_id = c.browser_id
   where 
     a._date >= "2022-01-01" and a._date <= "2023-06-01"
     and a.platform in ('boe')
