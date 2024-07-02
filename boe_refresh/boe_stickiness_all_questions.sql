@@ -99,6 +99,40 @@ create or replace table etsy-data-warehouse-dev.madelinecollins.app_downloads_ha
 
 --engagements around query 
 --switch out base tables to get different levels of interaction 
+--most common words 
+with words as (
+select 
+  word
+ , visit_id
+ , user_id
+ , browser_id
+from etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit,
+unnest(split(query, ' ')) as word
+)
+select
+  word
+  , count(visit_id) as searches 
+  , count(distinct user_id) as users
+  , count(distinct browser_id) as browsers
+from words
+group by all order by 2 desc 
+limit 50
+
+--signed in vs signed out,total engagement metrics, pagnation
+select
+  count(case when user_id is null then query end) as signed_out_searches
+  , count(case when user_id is not null then query end) as signed_in_searches
+  , count(query) as searches
+  , sum(has_click) as clicks
+  , sum(has_favorite) as favorites
+  , sum(has_cart) as carts
+  , sum(has_purchase) as purchases
+  , avg(max_page) as pagnation
+  from etsy-data-warehouse-dev.madelinecollins.app_downloads_had_search_first_visit
+
+--`etsy-data-warehouse-prod.arizona.query_intent_labels`
+   qi.inference.label 
+
 
 
 
