@@ -169,7 +169,7 @@ b.bin
 , count(a.query_session_id) as sessions
 from 
   etsy-data-warehouse-prod.search.query_sessions_new a
-left join 
+join 
   `etsy-data-warehouse-prod.rollups.query_level_metrics_raw` b using (query_raw)
  where 
   a.platform in ('mobile_web','desktop')
