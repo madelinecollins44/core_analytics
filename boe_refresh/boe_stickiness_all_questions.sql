@@ -163,6 +163,19 @@ b.bin
  join `etsy-data-warehouse-prod.rollups.query_level_metrics_raw` b  using (query_raw)
  group by all
 
+--bins on web
+  select 
+b.bin
+, count(a.query_session_id) as sessions
+from 
+  etsy-data-warehouse-prod.search.query_sessions_new a
+left join 
+  `etsy-data-warehouse-prod.rollups.query_level_metrics_raw` b using (query_raw)
+ where 
+  a.platform in ('mobile_web','desktop')
+  and a._date >= "2022-01-01" and a._date <= "2023-06-01"
+ group by all
+  
 ----FUNNEL VIEW 
 --first boe visit
 with first_visit as (
