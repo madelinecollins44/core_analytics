@@ -22,7 +22,7 @@ CREATE TEMPORARY TABLE browsers
       LEFT JOIN `etsy-data-warehouse-prod.bot_mart.visit_bot_properties` p 
       on v.visit_id = p.visit_id and v._date = p._PARTITIONDATE
       left join etsy-data-warehouse-prod.rollups.visits_w_segments vs
-      on v.visit_id = p.visit_id and v._date = p._date
+      on v.visit_id = p.visit_id and v._date = vs._date
     where v._date >= date_sub(current_date(), INTERVAL 60 DAY)
     and NOT (p.landing_page_type IN ('search_geonamessuggest_thrift', 'search_geonamessuggest_thrift_success')
         and p.backend_bot_checks.datacentre = true
