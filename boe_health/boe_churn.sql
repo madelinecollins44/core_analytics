@@ -1,44 +1,46 @@
 --start with all visit data 
 with agg_visit as (
 select
-  user_id
-  , platform 
-  , browser_platform
-	, region  
-  , is_admin_visit as admin
-  , top_channel 
-  , visit_id
-  , _date
-  , start_datetime
-  , unix_seconds(timestamp (start_datetime)) as start_time
-  , row_number() over (partition by user_id order by unix_seconds(timestamp (start_datetime)) desc, visit_id desc) AS visit_order
+ a.user_id
+  , a.platform 
+  , a.browser_platform
+	, a.region  
+  , a.is_admin_visit as admin
+  , a.top_channel 
+  , a.visit_id
+  , a._date
+  , a.start_datetime
+  , unix_seconds(timestamp (a.start_datetime)) as start_time
+  , row_number() over (partition by a.user_id order by unix_seconds(timestamp (a.start_datetime)) desc, a.visit_id desc) AS visit_order
+  , b.buyer_segment
 from 
-  etsy-data-warehouse-prod.weblog.visits
+  etsy-data-warehouse-prod.weblog.visits a 
+left join 
+  etsy-data-warehouse-prod.rollups.visits_w_segments b using (visit_id, user_id, _date, platform)
 where _date >= current_date-10
 )
 , last_visit_platform as (
 select 
   user_id
+  , region
+  , admin
   , platform
+  , buyer_segment
   , min(visit_order) as most_recent_visit
+  , cast(max(_date) as date) as most_recent_visit_date
 from agg_visit
-where user_id=266926560
 group by all 
 )
+, agg as (
 select
-  a.user_id
-  , a.platform 
-  , a.browser_platform
-	, a.region  
-  , a.admin
-  , a.top_channel 
-  , case when b.platform in ('boe') then (current_date- a._date) end as days_since_boe_visit
-  -- days_since_mweb_visit
-  -- days_since_detskop_visit
+    user_id
+  , region
+  , admin
+  , buyer_segment
+  , case when platform in ('boe') then date_diff (current_date, most_recent_visit_date, day) end as days_since_boe_visit
+  , case when platform in ('mobile_web') then date_diff (current_date, most_recent_visit_date, day) end as days_since_mweb_visit
+  , case when platform in ('desktop') then date_diff (current_date, most_recent_visit_date, day) end as days_since_desktop_visit
 from 
-  agg_visit a 
-left join 
-  last_visit_platform b
-    on a.user_id=b.user_id
-    and a.platform=b.platform
-    and a.visit_order=b.most_recent_visit
+  last_visit_platform
+)
+select * from agg where user_id = 266926560
