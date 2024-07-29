@@ -1,4 +1,66 @@
 ------------------------------------------------------------
+--kristis method
+------------------------------------------------------------
+WITH first_app AS (
+  SELECT
+      user_id,
+      case when app_name = "ios-EtsyInc" then 'iOS'
+        when app_name = "android-EtsyInc" then 'Android'
+        else 'Unknown' end as OS,
+      canonical_region,
+      min(run_date) AS first_app
+    FROM
+      `etsy-data-warehouse-prod`.weblog.visits
+    WHERE _date >= "2010-01-01"
+    and platform = "boe"
+    and app_name in ("ios-EtsyInc","android-EtsyInc")
+    and user_id > 0
+    -- filter out visits that start on the CC settings page
+    -- there was an attack inflating "downloads" in August 2021
+    and landing_event != "account_credit_card_settings"
+    GROUP BY all
+), yy_union AS (
+  SELECT
+      'ty' AS era,
+      DATE(timestamp_seconds(first_app.first_app)) AS date,
+      OS,
+      canonical_region,
+      count(*) AS users
+    FROM
+      first_app
+    GROUP BY all
+  UNION ALL
+  SELECT
+      'ly' AS era,
+      CAST(date_add(DATE(timestamp_seconds(first_app_0.first_app)), interval 52 WEEK) as DATETIME) AS date,
+      OS,
+      canonical_region,
+      count(*) AS users
+    FROM
+      first_app AS first_app_0
+    GROUP BY all
+  ORDER BY
+    1 NULLS LAST,
+    2, 3, 4
+)
+SELECT
+    yy_union.date,
+    OS,
+    canonical_region,
+    sum(CASE
+      WHEN yy_union.era = 'ty' THEN yy_union.users
+    END) AS ty_downloads,
+    sum(CASE
+      WHEN yy_union.era = 'ly' THEN yy_union.users
+    END) AS ly_downloads
+  FROM
+    yy_union
+  WHERE yy_union.date < CAST(current_date() as DATETIME)
+  GROUP BY all
+ORDER BY
+  1,2, 3
+
+------------------------------------------------------------
 --using first download date
 ------------------------------------------------------------
 --find first boe visit 
