@@ -1,4 +1,4 @@
-
+-- this rollup looks at all visits in time frame, and of those users that have visited, when is their most recent visit on each platform
 BEGIN
 
 declare last_date date;
