@@ -8,9 +8,9 @@ drop table if exists `etsy-data-warehouse-dev.rollups.boe_churn_segmentation`;
 -- create table if not exists `etsy-data-warehouse-dev.rollups.boe_churn_segmentation`  (
 create table if not exists `etsy-data-warehouse-dev.rollups.boe_churn_segmentation`  (
  _date DATE
-  , region STRING
-  , admin INT64
-  , buyer_segment STRING
+  -- , region STRING
+  -- , admin INT64
+  -- , buyer_segment STRING
   , days_since_boe_visit INT64
   , days_since_mweb_visit INT64
   , days_since_desktop_visit INT64
