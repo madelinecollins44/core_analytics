@@ -1,6 +1,30 @@
 ------------------------------------------------------------
 --using first download date
 ------------------------------------------------------------
+--find first boe visit 
+create or replace temporary table app_downloads as (
+with all_boe_visits as (
+select
+ _date 
+  , visit_id
+  , user_id
+  , browser_id
+  , platform
+  , browser_platform
+  , top_channel
+  , region
+  , row_number() over (partition by user_id order by unix_seconds(timestamp (_date)) desc) AS visit_order
+from 
+  etsy-data-warehouse-prod.weblog.visits
+where 
+  platform in ('boe')
+and _date >= current_date-365
+)
+select
+  *
+from all_boe_visits 
+where visit_order =1
+); 
 
 ------------------------------------------------------------
 --using marketings app download tables
