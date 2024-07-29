@@ -1,25 +1,29 @@
+create or replace table etsy-data-warehouse-dev.madelinecollins.boe_user_retention as (
 with first_visits as (
   select
-  browser_id,
-  browser_platform,
-  region,
-  _date as first_app_visit,
-  user_id,
-  event_source,
-  start_datetime,
-  case when user_id is not null then 1 else 0 end as is_signed_in,
-  lead(_date) over (partition by browser_id order by start_datetime asc) as next_visit_date
+  v.browser_id,
+  v.browser_platform,
+  v.region,
+  v._date as first_app_visit,
+  v.user_id,
+  s.buyer_segment,
+  v.event_source,
+  v.start_datetime,
+  case when v.user_id is not null then 1 else 0 end as is_signed_in,
+  lead(v._date) over (partition by v.browser_id order by v.start_datetime asc) as next_visit_date
 from `etsy-data-warehouse-prod.weblog.visits` v  
-  where platform = "boe"
-  and _date is not null 
-  and event_source in ("ios", "android")
+left join etsy-data-warehouse-prod.rollups.visits_w_segments s using (user_id, visit_id)
+  where v.platform = "boe"
+  and v._date is not null 
+  and v.event_source in ("ios", "android")
   group by all
-qualify row_number() over(partition by browser_id order by start_datetime) = 1
+qualify row_number() over(partition by v.browser_id order by start_datetime) = 1
 )
 select 
 is_signed_in,
 browser_platform,
 region,
+buyer_segment,
 -- agg totals
 count(distinct case when first_app_visit = next_visit_date then browser_id end) as next_day_visits,
 count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as first_7_days,
@@ -33,3 +37,4 @@ count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id
 from first_visits
 where first_app_visit <= current_date
 group by all
+);
