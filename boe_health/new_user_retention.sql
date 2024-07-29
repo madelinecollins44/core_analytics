@@ -18,12 +18,16 @@ qualify row_number() over(partition by browser_id order by start_datetime) = 1
 )
 select 
 is_signed_in,
+-- agg totals
 count(distinct case when first_app_visit = next_visit_date then browser_id end) as next_day_visits,
 count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as first_7_days,
 count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as first_14_days,
-count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as first_30_days
+count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as first_30_days,
+--pct
+count(distinct case when first_app_visit = next_visit_date then browser_id end)/count(distinct browser_id) as pct_next_day_visits,
+count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/count(distinct browser_id) as pct_first_7_days,
+count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/count(distinct browser_id) as pct_first_14_days,
+count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/count(distinct browser_id) as pct_first_30_days
 from `etsy-data-warehouse-dev.semanuele.first_visits`
---where event_source = "ios"
---and 
 where first_app_visit <= current_date
 group by all
