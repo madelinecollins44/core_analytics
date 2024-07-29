@@ -26,6 +26,7 @@ select
   , admin
   , platform
   , buyer_segment
+  , count(distinct visit_id) as total_visits
   , min(visit_order) as most_recent_visit
   , cast(max(_date) as date) as most_recent_visit_date
 from agg_visit
@@ -37,10 +38,23 @@ select
   , region
   , admin
   , buyer_segment
-  , case when platform in ('boe') then date_diff (current_date, most_recent_visit_date, day) end as days_since_boe_visit
-  , case when platform in ('mobile_web') then date_diff (current_date, most_recent_visit_date, day) end as days_since_mweb_visit
-  , case when platform in ('desktop') then date_diff (current_date, most_recent_visit_date, day) end as days_since_desktop_visit
+  , current_date as _date
+  , sum(total_visits) as total_visits
+  , coalesce(max(case when platform in ('boe') then date_diff(current_date, most_recent_visit_date, day) else null end),0) as days_since_boe_visit
+  , coalesce(max(case when platform in ('mobile_web') then date_diff(current_date, most_recent_visit_date, day) else null end),0) as days_since_mweb_visit
+  , coalesce(max(case when platform in ('desktop') then date_diff(current_date, most_recent_visit_date, day)else null end),0) as days_since_desktop_visit
 from 
   last_visit_platform
+group by all 
 )
-select * from agg where user_id = 266926560
+select
+  _date
+  , region
+  , admin
+  , buyer_segment
+  , days_since_boe_visit
+  , days_since_mweb_visit
+  , days_since_desktop_visit
+  , count(distinct user_id) as unique_users
+from agg
+group by all 
