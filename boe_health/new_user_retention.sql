@@ -23,7 +23,7 @@ select
 is_signed_in,
 browser_platform,
 region,
-buyer_segment,
+buyer_segment,--segment when they downloaded the app
 -- agg totals
 count(distinct case when first_app_visit = next_visit_date then browser_id end) as next_day_visits,
 count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as first_7_days,
