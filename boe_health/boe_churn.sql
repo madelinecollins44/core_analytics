@@ -1,4 +1,30 @@
+
+BEGIN
+
+declare last_date date;
+
+-- drop table if exists `etsy-data-warehouse-prod.rollups.boe_churn_segmentation`;
+
+-- create table if not exists `etsy-data-warehouse-prod.rollups.boe_churn_segmentation`  (
+create table if not exists `etsy-data-warehouse-dev.rollups.boe_churn_segmentation`  (
+ _date DATE
+  , region STRING
+  , admin INT64
+  , buyer_segment STRING
+  , days_since_boe_visit INT64
+  , days_since_mweb_visit INT64
+  , days_since_desktop_visit INT64
+  , unique_users INT64
+); 
+
+-- set last_date = (select max(_date) from `etsy-data-warehouse-dev.rollups.boe_churn_segmentation`);
+--  if last_date is null then set last_date = (select min(_date)-1 from `etsy-data-warehouse-prod.weblog.events`);
+--  end if;
+
+set last_date = current_date-10; 
+
 --start with all visit data 
+create or replace temporary table all_data as (
 with agg_visit as (
 select
  a.user_id
@@ -17,7 +43,7 @@ from
   etsy-data-warehouse-prod.weblog.visits a 
 left join 
   etsy-data-warehouse-prod.rollups.visits_w_segments b using (visit_id, user_id, _date, platform)
-where _date >= current_date-10
+where _date >= last_date
 )
 , last_visit_platform as (
 select 
@@ -32,7 +58,6 @@ select
 from agg_visit
 group by all 
 )
-, agg as (
 select
     user_id
   , region
@@ -46,7 +71,9 @@ select
 from 
   last_visit_platform
 group by all 
-)
+);
+
+insert into `etsy-data-warehouse-prodev.rollups.boe_churn_segmentation` (
 select
   _date
   , region
@@ -56,5 +83,8 @@ select
   , days_since_mweb_visit
   , days_since_desktop_visit
   , count(distinct user_id) as unique_users
-from agg
+from all_data
 group by all 
+); 
+
+end
