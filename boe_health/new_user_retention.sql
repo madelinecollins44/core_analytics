@@ -30,10 +30,10 @@ count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id 
 count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as first_14_days,
 count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as first_30_days,
 --pct
-count(distinct case when first_app_visit = next_visit_date then browser_id end)/count(distinct browser_id) as pct_next_day_visits,
-count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/count(distinct browser_id) as pct_first_7_days,
-count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/count(distinct browser_id) as pct_first_14_days,
-count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/count(distinct browser_id) as pct_first_30_days
+-- count(distinct case when first_app_visit = next_visit_date then browser_id end)/count(distinct browser_id) as pct_next_day_visits,
+-- count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/count(distinct browser_id) as pct_first_7_days,
+-- count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/count(distinct browser_id) as pct_first_14_days,
+-- count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/count(distinct browser_id) as pct_first_30_days
 from first_visits
 where first_app_visit <= current_date
 group by all
