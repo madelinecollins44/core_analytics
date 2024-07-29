@@ -52,7 +52,6 @@ select
   , admin
   , platform
   , buyer_segment
-  , count(distinct visit_id) as total_visits
   , min(visit_order) as most_recent_visit
   , cast(max(_date) as date) as most_recent_visit_date
 from agg_visit
@@ -73,7 +72,7 @@ from
 group by all 
 );
 
-insert into `etsy-data-warehouse-prodev.rollups.boe_churn_segmentation` (
+insert into `etsy-data-warehouse-dev.rollups.boe_churn_segmentation` (
 select
   _date
   , region
