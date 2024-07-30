@@ -42,7 +42,7 @@ select
 from 
   etsy-data-warehouse-prod.weblog.visits a 
 left join 
-  etsy-data-warehouse-prod.rollups.visits_w_segments b using (visit_id, user_id, _date, platform)
+  mapped_user_profile b using (user_id)
 where _date >= current_date-3
 )
 , last_visit_platform as (
