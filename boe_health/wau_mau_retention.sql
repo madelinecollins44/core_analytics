@@ -1,3 +1,5 @@
+------code from https://etsy.slack.com/archives/D063LTSJ1GT/p1722348600396999
+
 -- WAU Retention
 create or replace table etsy-data-warehouse-dev.rollups.boe_waus_retention as (
 with waus as (
