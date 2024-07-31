@@ -3,7 +3,6 @@ create or replace table etsy-data-warehouse-dev.rollups.boe_waus_retention as (
 with waus as (
   select 
     date_trunc(_date, week) as week,
-    date_trunc(_date, month) as month,
     v.user_id,
     count(*) as visits,
     sum(total_gms) as gms
