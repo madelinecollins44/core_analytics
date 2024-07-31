@@ -24,6 +24,7 @@ next_visit_weeks as (
 select 
   week,
   count(*) as waus,
+  count(case when next_visit_week = date_add(week, interval 1 week) then user_id end) as retained,
   count(case when next_visit_week = date_add(week, interval 1 week) then user_id end) / count(*) as pct_retained,
   sum(gms) as gms
 from next_visit_weeks 
@@ -56,6 +57,7 @@ next_visit_months as (
 select 
   month,
   count(*) as maus,
+  count(case when next_visit_month = date_add(month, interval 1 month) then user_id end) as retained,
   count(case when next_visit_month = date_add(month, interval 1 month) then user_id end) / count(*) as pct_retained,
   sum(gms) as gms
 from next_visit_months 
