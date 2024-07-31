@@ -15,7 +15,7 @@
     WHERE
       v.event_source in ('ios','android')
       -- AND v.app_name in ('ios-EtsyInc','android-EtsyInc','ios-ButterSellOnEtsy', 'android-ButterSellOnEtsy') -- only looking at boe downloads 
-      AND v._date >= '2022-01-01' and v._date < current_date
+      AND v._date >= '2022-01-01' 
       AND landing_event != "account_credit_card_settings" -- filter out visits that start on the CC settings page. there was an attack inflating "downloads" in August 2021
       and platform in ('boe')
   )
@@ -70,5 +70,6 @@
     sum(case when era= 'ly' then downloads end) as ly_downloads_visit_level,
     sum(case when era= 'ly' then user_downloads end) as ly_downloads_user_level,
   from yy_union
+  where _date < current_date
   group by all 
   );
