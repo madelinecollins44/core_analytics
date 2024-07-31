@@ -1,5 +1,7 @@
---this rollup looks at first boe visit ever from each user (regardless of the browser_id). used user level bc of kristis query in looker
-with app_visits as (
+  --this rollup looks at first boe visit ever from each user (regardless of the browser_id). used user level bc of kristis query in looker
+
+  create or replace table etsy-data-warehouse-dev.madelinecollins.users_first_boe_visit as (
+  with app_visits as (
     SELECT DISTINCT
       u.mapped_user_id,
       v.visit_id,
@@ -26,7 +28,7 @@ with app_visits as (
     mapped_user_id,
     buyer_segment,
     case when mapped_user_id is not null then 1 else 0 end as signed_in,
-    app_type,
+    -- app_type,
     visit_id,
     canonical_region,  
     -- os,
@@ -68,7 +70,6 @@ with app_visits as (
   )
   select
     _date,
-    era, 
     buyer_segment, 
     signed_in,
     -- app_type,
@@ -77,7 +78,8 @@ with app_visits as (
     browser_platform,
     sum(case when era= 'ty' then downloads end) as ty_downloads_visit_level,
     sum(case when era= 'ty' then user_downloads end) as ty_downloads_user_level,
-    sum(case when era= 'ly' then downloads end) as ty_downloads_visit_level,
-    sum(case when era= 'ly' then user_downloads end) as ty_downloads_user_level,
+    sum(case when era= 'ly' then downloads end) as ly_downloads_visit_level,
+    sum(case when era= 'ly' then user_downloads end) as ly_downloads_user_level,
   from yy_union
   group by all 
+  );
