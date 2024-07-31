@@ -14,7 +14,7 @@
     LEFT JOIN `etsy-data-warehouse-prod.user_mart.user_mapping` u on v.user_id = u.user_id -- want to also include anyone that was signed out during download time 
     WHERE
       v.event_source in ('ios','android')
-      -- AND v.app_name in ('ios-EtsyInc','android-EtsyInc','ios-ButterSellOnEtsy', 'android-ButterSellOnEtsy') -- only looking at boe downloads 
+      AND v.app_name in ('ios-EtsyInc','android-EtsyInc','ios-ButterSellOnEtsy', 'android-ButterSellOnEtsy')
       AND v._date >= '2022-01-01' 
       AND landing_event != "account_credit_card_settings" -- filter out visits that start on the CC settings page. there was an attack inflating "downloads" in August 2021
       and platform in ('boe')
@@ -27,6 +27,7 @@
     visit_id,
     a.region,  
     browser_platform,
+    platform,
     start_datetime,
   FROM app_visits a
   left join etsy-data-warehouse-prod.user_mart.mapped_user_profile b using (mapped_user_id) 
@@ -41,6 +42,7 @@
       signed_in,
       region,  
       browser_platform,
+      platform,
       count(distinct visit_id) as downloads,
       count(distinct mapped_user_id) as user_downloads
   from first_visits
@@ -54,6 +56,7 @@
       signed_in,
       region,  
       browser_platform,
+      platform,
       count(distinct visit_id) as downloads,
       count(distinct mapped_user_id) as user_downloads
       from first_visits
@@ -65,6 +68,7 @@
     signed_in,
     region,  
     browser_platform,
+    platform,
     sum(case when era= 'ty' then downloads end) as ty_downloads_visit_level,
     sum(case when era= 'ty' then user_downloads end) as ty_downloads_user_level,
     sum(case when era= 'ly' then downloads end) as ly_downloads_visit_level,
