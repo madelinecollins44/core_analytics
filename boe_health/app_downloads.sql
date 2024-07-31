@@ -1,6 +1,6 @@
   --this rollup looks at first boe visit ever from each user (regardless of the browser_id). used user level bc of kristis query in looker
 
-  create or replace table etsy-data-warehouse-dev.madelinecollins.users_first_boe_visit as (
+  create or replace table etsy-data-warehouse-dev.rollups.users_first_boe_visit as (
   with app_visits as (
     SELECT DISTINCT
       u.mapped_user_id,
