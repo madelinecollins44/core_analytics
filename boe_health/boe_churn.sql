@@ -139,3 +139,10 @@ END
 --     using (user_id)
 -- where user_id = 691894907
 --   group by all 
+
+----testing user_ids that have 365 in both boe visits + mweb visits 
+---user_ids: 
+--817436368: confirmed w weblog.visits last visit was 8/1/2023
+--7708299: last visit was 8/1/2023
+--153081381:last visit was 2023-08-01
+--798198902: last visit was 2023-07-31 
