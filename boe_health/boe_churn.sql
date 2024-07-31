@@ -20,7 +20,7 @@ create table if not exists `etsy-data-warehouse-dev.rollups.boe_churn_segmentati
 --  if last_date is null then set last_date = (select min(_date)-1 from `etsy-data-warehouse-prod.weblog.events`);
 --  end if;
 
-set last_date = '2023-01-01'; 
+set last_date = current_date-365; 
 
 create or replace temp table combine_all_platforms as (
 with all_visits as (
@@ -113,29 +113,29 @@ left join
 END 
 
 
-------testing
-select * from last_mweb_desktop_visit where user_id = 928050874
+-- ------testing
+-- select * from last_mweb_desktop_visit where user_id = 928050874
 
--- no boe visit for 928050874 -- desktop only 
--- select user_id, count(*) from all_visits group by all order by 2 desc
+-- -- no boe visit for 928050874 -- desktop only 
+-- -- select user_id, count(*) from all_visits group by all order by 2 desc
 
 
----tested w single user_-d and confirmed everything workds as it should 
--- , final as (
-select
-  current_date as _date
-  , user_id
-  , b.buyer_segment as most_recent_buyer_segment
-  , b.region as most_recent_region
-  , b.signed_in as most_recent_signed_in_status
-  , b.browser_platform as most_recent_browser_platform
-  , coalesce(max(case when a.platform in ('boe') then date_diff(current_date, a.visit_date, day) else null end),0) as days_since_boe_visit
-  , coalesce(max(case when a.platform in ('mweb/ desktop') then date_diff(current_date, a.visit_date, day) else null end),0) as days_since_mweb_visit
-  , count(distinct user_id) as user_count
-from 
-  combine_all_platforms a
-left join 
-  most_recent_visit b
-    using (user_id)
-where user_id = 691894907
-  group by all 
+-- ---tested w single user_-d and confirmed everything workds as it should 
+-- -- , final as (
+-- select
+--   current_date as _date
+--   , user_id
+--   , b.buyer_segment as most_recent_buyer_segment
+--   , b.region as most_recent_region
+--   , b.signed_in as most_recent_signed_in_status
+--   , b.browser_platform as most_recent_browser_platform
+--   , coalesce(max(case when a.platform in ('boe') then date_diff(current_date, a.visit_date, day) else null end),0) as days_since_boe_visit
+--   , coalesce(max(case when a.platform in ('mweb/ desktop') then date_diff(current_date, a.visit_date, day) else null end),0) as days_since_mweb_visit
+--   , count(distinct user_id) as user_count
+-- from 
+--   combine_all_platforms a
+-- left join 
+--   most_recent_visit b
+--     using (user_id)
+-- where user_id = 691894907
+--   group by all 
