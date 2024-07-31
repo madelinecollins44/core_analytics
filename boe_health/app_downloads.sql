@@ -5,21 +5,17 @@
     SELECT DISTINCT
       u.mapped_user_id,
       v.visit_id,
-      canonical_region,
+      v.region,
       browser_id,
       browser_platform, 
       platform,
-      -- v.event_source as os,
-      -- case
-      --   when app_name in ('ios-EtsyInc','android-EtsyInc') then 'boe'
-      --   else 'esa' end as app_type,
       v.start_datetime,
     FROM `etsy-data-warehouse-prod.weblog.visits` v
     LEFT JOIN `etsy-data-warehouse-prod.user_mart.user_mapping` u on v.user_id = u.user_id -- want to also include anyone that was signed out during download time 
     WHERE
       v.event_source in ('ios','android')
       -- AND v.app_name in ('ios-EtsyInc','android-EtsyInc','ios-ButterSellOnEtsy', 'android-ButterSellOnEtsy') -- only looking at boe downloads 
-      AND v._date >= '2022-01-01'
+      AND v._date >= '2022-01-01' and v._date < current_date
       AND landing_event != "account_credit_card_settings" -- filter out visits that start on the CC settings page. there was an attack inflating "downloads" in August 2021
       and platform in ('boe')
   )
@@ -28,25 +24,22 @@
     mapped_user_id,
     buyer_segment,
     case when mapped_user_id is not null then 1 else 0 end as signed_in,
-    -- app_type,
     visit_id,
-    canonical_region,  
-    -- os,
+    a.region,  
     browser_platform,
     start_datetime,
-  FROM app_visits 
-  left join etsy-data-warehouse-prod.user_mart.mapped_user_profile using (mapped_user_id) 
+  FROM app_visits a
+  left join etsy-data-warehouse-prod.user_mart.mapped_user_profile b using (mapped_user_id) 
   QUALIFY ROW_NUMBER() OVER (PARTITION BY mapped_user_id ORDER BY start_datetime) = 1 -- this only looks at first app for each USER, not each user across different devices 
-  ), yy_union as (
+  )
+  , yy_union as (
     select
     --ty calcs
       date(timestamp(start_datetime)) as _date,
       'ty' as era, 
       buyer_segment, 
       signed_in,
-      -- app_type,
-      canonical_region,  
-      -- os,
+      region,  
       browser_platform,
       count(distinct visit_id) as downloads,
       count(distinct mapped_user_id) as user_downloads
@@ -59,9 +52,7 @@
      'ly' as era, 
       buyer_segment, 
       signed_in,
-      -- app_type,
-      canonical_region,  
-      -- os,
+      region,  
       browser_platform,
       count(distinct visit_id) as downloads,
       count(distinct mapped_user_id) as user_downloads
@@ -72,9 +63,7 @@
     _date,
     buyer_segment, 
     signed_in,
-    -- app_type,
-    canonical_region,  
-    -- os,
+    region,  
     browser_platform,
     sum(case when era= 'ty' then downloads end) as ty_downloads_visit_level,
     sum(case when era= 'ty' then user_downloads end) as ty_downloads_user_level,
