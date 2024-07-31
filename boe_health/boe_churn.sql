@@ -6,14 +6,14 @@ declare last_date date;
 drop table if exists `etsy-data-warehouse-dev.rollups.boe_churn_segmentation`;
 
 create table if not exists `etsy-data-warehouse-dev.rollups.boe_churn_segmentation`  (
- _date DATE
-  -- , region STRING
-  -- , admin INT64
-  -- , buyer_segment STRING
-  , days_since_boe_visit INT64
-  , days_since_mweb_visit INT64
-  , days_since_desktop_visit INT64
-  , unique_users INT64
+  _date DATE
+  , most_recent_buyer_segment STRING
+  , most_recent_region STRING
+  , most_recent_signed_in STRING
+  , most_recent_browser_platform STRING
+  , days_since_boe_visit STRING
+  , days_since_mweb_visit STRING
+  , user_count int64
 ); 
 
 -- set last_date = (select max(_date) from `etsy-data-warehouse-dev.rollups.boe_churn_segmentation`);
