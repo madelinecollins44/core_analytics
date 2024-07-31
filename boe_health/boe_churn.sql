@@ -20,7 +20,7 @@ create table if not exists `etsy-data-warehouse-dev.rollups.boe_churn_segmentati
 --  if last_date is null then set last_date = (select min(_date)-1 from `etsy-data-warehouse-prod.weblog.events`);
 --  end if;
 
-set last_date = current_date-10; 
+set last_date = '2023-01-01'; 
 
 create or replace temp table combine_all_platforms as (
 with all_visits as (
@@ -110,7 +110,7 @@ left join
   group by all 
 );
 
-end 
+END 
 
 
 ------testing
