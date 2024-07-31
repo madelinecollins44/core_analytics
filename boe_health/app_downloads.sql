@@ -1,4 +1,4 @@
---this rollup looks at first boe visit ever from each user (regardless of the browser_id)
+--this rollup looks at first boe visit ever from each user (regardless of the browser_id). used user level bc of kristis query in looker
 with app_visits as (
     SELECT DISTINCT
       u.mapped_user_id,
