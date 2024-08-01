@@ -1,4 +1,4 @@
-create or replace table etsy-data-warehouse-dev.madelinecollins.boe_user_retention as (
+create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention as (
 with first_visits as (
   select
   v.browser_id,
@@ -11,13 +11,16 @@ with first_visits as (
   v.start_datetime,
   case when v.user_id is not null then 1 else 0 end as is_signed_in,
   lead(v._date) over (partition by v.browser_id order by v.start_datetime asc) as next_visit_date
-from `etsy-data-warehouse-prod.weblog.visits` v  
-left join etsy-data-warehouse-prod.rollups.visits_w_segments s using (user_id, visit_id)
+from 
+  `etsy-data-warehouse-prod.weblog.visits` v  
+left join 
+    etsy-data-warehouse-prod.user_mart.mapped_user_profile s using (user_id)
   where v.platform = "boe"
   and v._date is not null 
+  and v._date >= current_date-365
   and v.event_source in ("ios", "android")
   group by all
-qualify row_number() over(partition by v.browser_id order by start_datetime) = 1
+qualify row_number() over(partition by v.browser_id order by start_datetime desc) = 1
 )
 select 
 is_signed_in,
