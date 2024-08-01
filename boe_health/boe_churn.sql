@@ -146,3 +146,9 @@ END
 --7708299: last visit was 8/1/2023
 --153081381:last visit was 2023-08-01
 --798198902: last visit was 2023-07-31 
+
+---days that are having 363 and up days since last visit 
+-- select distinct last_mweb_visit, last_boe_visit from test 
+--     where days_since_mweb_visit > 360 
+--     or days_since_boe_visit > 360
+--8/2- 8/6
