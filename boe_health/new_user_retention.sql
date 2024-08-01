@@ -17,7 +17,7 @@ left join
     etsy-data-warehouse-prod.user_mart.mapped_user_profile s using (user_id)
   where v.platform = "boe"
   and v._date is not null 
-  and v._date >= current_date-365
+  and v._date >= current_date-730
   and v.event_source in ("ios", "android")
   group by all
 qualify row_number() over(partition by v.browser_id order by start_datetime desc) = 1
@@ -27,11 +27,16 @@ is_signed_in,
 browser_platform,
 region,
 buyer_segment,--segment when they downloaded the app
--- agg totals
-count(distinct case when first_app_visit = next_visit_date then browser_id end) as next_day_visits,
-count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as first_7_days,
-count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as first_14_days,
-count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as first_30_days,
+-- agg totals for browser
+count(distinct case when first_app_visit = next_visit_date then browser_id end) as next_day_visits_browser,
+count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as first_7_days_browser,
+count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as first_14_days_browser,
+count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as first_30_days_browser,
+-- agg totals for user
+count(distinct case when first_app_visit = next_visit_date then user_id end) as next_day_visits_user,
+count(distinct case when next_visit_date <= first_app_visit + 6 then user_id end) as first_7_days_user,
+count(distinct case when next_visit_date <= first_app_visit + 13 then user_id end) as first_14_days_user,
+count(distinct case when next_visit_date <= first_app_visit + 29 then user_id end) as first_30_days_user,
 --pct
 -- count(distinct case when first_app_visit = next_visit_date then browser_id end)/count(distinct browser_id) as pct_next_day_visits,
 -- count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/count(distinct browser_id) as pct_first_7_days,
