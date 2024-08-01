@@ -20,7 +20,7 @@ left join
     etsy-data-warehouse-prod.user_mart.mapped_user_profile s using (user_id)
   where v.platform = "boe"
   and v._date is not null 
-  and v._date >= current_date-730
+  -- and v._date >= current_date-730
   and v.event_source in ("ios", "android")
   group by all
 qualify row_number() over(partition by v.user_id order by start_datetime desc) = 1
@@ -30,7 +30,6 @@ is_signed_in,
 browser_platform,
 region,
 buyer_segment,--segment when they downloaded the app
-
 -- agg totals for unique_id, again this is so signed out users are still counted 
 count(distinct unique_id) as first_visit,
 count(distinct case when first_app_visit = next_visit_date then unique_id end) as same_day_visits,
@@ -47,6 +46,34 @@ from first_visits
 where first_app_visit <= current_date
 group by all
 );
+______________________________________________________________________________________________________________________________________________________________________________________
+-----testing for method above
+with first_visits as (
+  select
+  v.browser_id,
+  v.browser_platform,
+  v.region,
+  v._date as first_app_visit,
+  v.user_id,
+  coalesce(cast(v.user_id as string), v.browser_id) as unique_id, -- coalescing here so even if user is signed out, user_id = null, then browser will be counted 
+  s.buyer_segment,
+  v.event_source,
+  v.start_datetime,
+  case when v.user_id is not null then 1 else 0 end as is_signed_in,
+  lead(v._date) over (partition by v.user_id order by v.start_datetime asc) as next_visit_date
+from 
+  `etsy-data-warehouse-prod.weblog.visits` v  
+left join 
+    etsy-data-warehouse-prod.user_mart.mapped_user_profile s using (user_id)
+  where v.platform = "boe"
+  and v._date is not null 
+  and v._date >= current_date-730
+  and v.event_source in ("ios", "android")
+  group by all
+qualify row_number() over(partition by v.user_id order by start_datetime desc) = 1
+)
+select count(distinct case when user_id is null then browser_id end), count(distinct user_id) from first_visits group by all 
+  --only 1 signed out user???
 ______________________________________________________________________________________________________________________________________________________________________________________
 -- create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention as (
 -- with first_visits as (
