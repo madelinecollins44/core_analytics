@@ -1,7 +1,7 @@
 ----this rollup looks at the first visit for each user. if the user is signed out, then we use the browser_id
-create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention as (
-  --first visit from each USER to boe, tracks their user_id going forward
-with first_visits as (
+  begin
+
+  create or replace temp table first_visits as (
   select
   v.browser_id,
   v.browser_platform,
@@ -24,7 +24,10 @@ left join
   and v.event_source in ("ios", "android")
   group by all
 qualify row_number() over(partition by v.user_id order by start_datetime desc) = 1
-)
+);
+
+--looks at user retention by segments
+create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention as (
 select 
 is_signed_in,
 browser_platform,
@@ -37,15 +40,92 @@ count(distinct case when next_visit_date <= first_app_visit + 6 then unique_id e
 count(distinct case when next_visit_date <= first_app_visit + 13 then unique_id end) as first_14_days,
 count(distinct case when next_visit_date <= first_app_visit + 29 then unique_id end) as first_30_days,
 --pct
-count(distinct case when first_app_visit = next_visit_date then unique_id end)/nullif(count(distinct unique_id),0) as pct_next_day_visits,
+count(distinct case when first_app_visit = next_visit_date then unique_id end)/nullif(count(distinct unique_id),0) as pct_same_day_visits,
 count(distinct case when next_visit_date <= first_app_visit + 6 then unique_id end)/nullif(count(distinct unique_id),0) as pct_first_7_days,
 count(distinct case when next_visit_date <= first_app_visit + 13 then unique_id end)/nullif(count(distinct unique_id),0) as pct_first_14_days,
 count(distinct case when next_visit_date <= first_app_visit + 29 then unique_id end)/nullif(count(distinct unique_id),0) as pct_first_30_days
-
 from first_visits
 where first_app_visit <= current_date
 group by all
 );
+
+--looks at user retention by segments, yoy comparison
+create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention_yoy as (
+with yoy_union as (
+select 
+  'ty' as era,
+  first_app_visit,
+  is_signed_in,
+  browser_platform,
+  region,
+  buyer_segment,--segment when they downloaded the app
+  -- agg totals for unique_id, again this is so signed out users are still counted 
+  count(distinct unique_id) as first_visit,
+  count(distinct case when first_app_visit = next_visit_date then unique_id end) as same_day_visits,
+  count(distinct case when next_visit_date <= first_app_visit + 6 then unique_id end) as first_7_days,
+  count(distinct case when next_visit_date <= first_app_visit + 13 then unique_id end) as first_14_days,
+  count(distinct case when next_visit_date <= first_app_visit + 29 then unique_id end) as first_30_days,
+  --pct
+  count(distinct case when first_app_visit = next_visit_date then unique_id end)/nullif(count(distinct unique_id),0) as pct_same_day_visits,
+  count(distinct case when next_visit_date <= first_app_visit + 6 then unique_id end)/nullif(count(distinct unique_id),0) as pct_first_7_days,
+  count(distinct case when next_visit_date <= first_app_visit + 13 then unique_id end)/nullif(count(distinct unique_id),0) as pct_first_14_days,
+  count(distinct case when next_visit_date <= first_app_visit + 29 then unique_id end)/nullif(count(distinct unique_id),0) as pct_first_30_days
+from first_visits
+union all
+select
+  'ly' as era,
+  CAST(date_add(first_app_visit, interval 52 WEEK) as DATETIME) AS first_app_visit,
+  is_signed_in,
+  browser_platform,
+  region,
+  buyer_segment,--segment when they downloaded the app
+  -- agg totals for unique_id, again this is so signed out users are still counted 
+  count(distinct unique_id) as first_visit,
+  count(distinct case when first_app_visit = next_visit_date then unique_id end) as same_day_visits,
+  count(distinct case when next_visit_date <= first_app_visit + 6 then unique_id end) as first_7_days,
+  count(distinct case when next_visit_date <= first_app_visit + 13 then unique_id end) as first_14_days,
+  count(distinct case when next_visit_date <= first_app_visit + 29 then unique_id end) as first_30_days,
+  --pct
+  count(distinct case when first_app_visit = next_visit_date then unique_id end)/nullif(count(distinct unique_id),0) as pct_same_day_visits,
+  count(distinct case when next_visit_date <= first_app_visit + 6 then unique_id end)/nullif(count(distinct unique_id),0) as pct_first_7_days,
+  count(distinct case when next_visit_date <= first_app_visit + 13 then unique_id end)/nullif(count(distinct unique_id),0) as pct_first_14_days,
+  count(distinct case when next_visit_date <= first_app_visit + 29 then unique_id end)/nullif(count(distinct unique_id),0) as pct_first_30_days
+from first_visits
+)
+SELECT
+  era,
+  first_app_visit,
+  is_signed_in,
+  browser_platform,
+  region,
+  buyer_segment,
+  --ty metrics
+  sum(CASE WHEN era = 'ty' THEN first_visit END) AS ty_first_visit,
+  sum(CASE WHEN era = 'ty' THEN first_7_days END) AS ty_first_7_days,
+  sum(CASE WHEN era = 'ty' THEN first_14_days END) AS ty_first_14_days,
+  sum(CASE WHEN era = 'ty' THEN first_30_days END) AS ty_first_30_days,
+  sum(CASE WHEN era = 'ty' THEN pct_next_day_visits END) AS ty_pct_same_day_visits,
+  sum(CASE WHEN era = 'ty' THEN pct_first_7_days END) AS ty_pct_first_7_days,
+  sum(CASE WHEN era = 'ty' THEN pct_first_14_days END) AS ty_pct_first_14_days,
+  sum(CASE WHEN era = 'ty' THEN pct_first_30_days END) AS ty_pct_first_30_days,
+  sum(CASE WHEN era = 'ty' THEN pct_first_7_days END) AS ty_pct_first_7_days,
+  --ly metrics
+  sum(CASE WHEN era = 'ly' THEN first_visit END) AS ly_first_visit,
+  sum(CASE WHEN era = 'ly' THEN first_7_days END) AS ly_first_7_days,
+  sum(CASE WHEN era = 'ly' THEN first_14_days END) AS ly_first_14_days,
+  sum(CASE WHEN era = 'ly' THEN first_30_days END) AS ly_first_30_days,
+  sum(CASE WHEN era = 'ly' THEN pct_next_day_visits END) AS ly_pct_same_day_visits,
+  sum(CASE WHEN era = 'ly' THEN pct_first_7_days END) AS ly_pct_first_7_days,
+  sum(CASE WHEN era = 'ly' THEN pct_first_14_days END) AS ly_pct_first_14_days,
+  sum(CASE WHEN era = 'ly' THEN pct_first_30_days END) AS ly_pct_first_30_days,
+  sum(CASE WHEN era = 'ly' THEN pct_first_7_days END) AS ly_pct_first_7_days,
+  FROM
+    yoy_union
+  WHERE first_app_visit < CAST(current_date() as DATETIME)
+  GROUP BY all
+);
+
+end
 ______________________________________________________________________________________________________________________________________________________________________________________
 -----testing for method above
 with first_visits as (
