@@ -1,7 +1,7 @@
 ----this rollup looks at the first visit for each user. if the user is signed out, then we use the browser_id
   begin
 
-  create or replace temp table first_visits as (
+create or replace temp table first_visits as (
   select
   v.browser_id,
   v.browser_platform,
@@ -13,7 +13,7 @@
   v.event_source,
   v.start_datetime,
   case when v.user_id is not null then 1 else 0 end as is_signed_in,
-  lead(v._date) over (partition by v.user_id order by v.start_datetime asc) as next_visit_date
+  lead(v._date) over (partition by coalesce(cast(v.user_id as string), v.browser_id) order by v.start_datetime asc) as next_visit_date
 from 
   `etsy-data-warehouse-prod.weblog.visits` v  
 left join 
@@ -23,7 +23,7 @@ left join
   -- and v._date >= current_date-730
   and v.event_source in ("ios", "android")
   group by all
-qualify row_number() over(partition by v.user_id order by start_datetime desc) = 1
+qualify row_number() over(partition by coalesce(cast(v.user_id as string), v.browser_id) order by start_datetime desc) = 1
 );
 
 --looks at user retention by segments
