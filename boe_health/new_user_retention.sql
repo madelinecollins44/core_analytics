@@ -57,16 +57,16 @@ select
   region,
   buyer_segment,--segment when they downloaded the app
   -- agg totals for browser_id, again this is so signed out users are still counted 
-count(distinct browser_id) as ty_browsers_with_first_visit,
-count(distinct case when first_app_visit = next_visit_date then browser_id end) as ty_browsers_visit_in_same_day,
-count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as ty_browsers_visit_in_first_7_days,
-count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as ty_browsers_visit_in_first_14_days,
-count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as ty_browsers_visit_in_first_30_days,
+count(distinct browser_id) as browsers_with_first_visit,
+count(distinct case when first_app_visit = next_visit_date then browser_id end) as browsers_visit_in_same_day,
+count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as browsers_visit_in_first_7_days,
+count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as browsers_visit_in_first_14_days,
+count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as browsers_visit_in_first_30_days,
   --pct
-count(distinct case when first_app_visit = next_visit_date then browser_id end)/nullif(count(distinct browser_id),0) as ty_pct_browsers_visit_in_same_day,
-count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/nullif(count(distinct browser_id),0) as ty_pct_browsers_visit_in_first_7_days,
-count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/nullif(count(distinct browser_id),0) as ty_pct_browsers_visit_in_first_14_days,
-count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/nullif(count(distinct browser_id),0) as ty_pct_browsers_visit_in_first_30_days
+count(distinct case when first_app_visit = next_visit_date then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_same_day,
+count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_7_days,
+count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_14_days,
+count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_30_days
 from first_visits
 group by all
 union all
@@ -78,16 +78,16 @@ select
   region,
   buyer_segment,--segment when they downloaded the app
   -- agg totals for browser_id, again this is so signed out users are still counted 
-  count(distinct browser_id) as ly_browsers_with_first_visit,
-count(distinct case when first_app_visit = next_visit_date then browser_id end) as ly_browsers_visit_in_same_day,
-count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as ly_browsers_visit_in_first_7_days,
-count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as ly_browsers_visit_in_first_14_days,
-count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as ly_browsers_visit_in_first_30_days,
+count(distinct browser_id) as browsers_with_first_visit,
+count(distinct case when first_app_visit = next_visit_date then browser_id end) as browsers_visit_in_same_day,
+count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as browsers_visit_in_first_7_days,
+count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as browsers_visit_in_first_14_days,
+count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as browsers_visit_in_first_30_days,
   --pct
-count(distinct case when first_app_visit = next_visit_date then browser_id end)/nullif(count(distinct browser_id),0) as ly_pct_browsers_visit_in_same_day,
-count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/nullif(count(distinct browser_id),0) as ly_pct_browsers_visit_in_first_7_days,
-count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/nullif(count(distinct browser_id),0) as ly_pct_browsers_visit_in_first_14_days,
-count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/nullif(count(distinct browser_id),0) as ly_pct_browsers_visit_in_first_30_days
+count(distinct case when first_app_visit = next_visit_date then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_same_day,
+count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_7_days,
+count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_14_days,
+count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_30_days
 from first_visits
 group by all 
 )
@@ -99,7 +99,7 @@ SELECT
   region,
   buyer_segment,
   --ty metrics
-  sum(CASE WHEN era = 'ty' THEN ly_browsers_with_first_visit END) AS ty_browsers_with_first_visit,
+  sum(CASE WHEN era = 'ty' THEN browsers_with_first_visit END) AS ty_browsers_with_first_visit,
   sum(CASE WHEN era = 'ty' THEN browsers_visit_in_first_7_days END) AS ty_browsers_visit_in_first_7_days,
   sum(CASE WHEN era = 'ty' THEN browsers_visit_in_first_14_days END) AS ty_browsers_visit_in_first_14_days,
   sum(CASE WHEN era = 'ty' THEN browsers_visit_in_first_30_days END) AS ty_browsers_visit_in_first_30_days,
@@ -108,7 +108,7 @@ SELECT
   sum(CASE WHEN era = 'ty' THEN pct_browsers_visit_in_first_14_days END) AS ty_pct_browsers_visit_in_first_14_days,
   sum(CASE WHEN era = 'ty' THEN pct_browsers_visit_in_first_30_days END) AS ty_pct_browsers_visit_in_first_30_days,
   --ly metrics
-  sum(CASE WHEN era = 'ly' THEN ly_browsers_with_first_visit END) AS ly_browsers_with_first_visit,
+  sum(CASE WHEN era = 'ly' THEN browsers_with_first_visit END) AS ly_browsers_with_first_visit,
   sum(CASE WHEN era = 'ly' THEN browsers_visit_in_first_7_days END) AS ly_browsers_visit_in_first_7_days,
   sum(CASE WHEN era = 'ly' THEN browsers_visit_in_first_14_days END) AS ly_browsers_visit_in_first_14_days,
   sum(CASE WHEN era = 'ly' THEN browsers_visit_in_first_30_days END) AS ly_browsers_visit_in_first_30_days,
@@ -121,7 +121,6 @@ SELECT
   WHERE first_app_visit < CAST(current_date() as DATETIME)
   GROUP BY all
 );
-
 ------------------------------------------------------------------------------------------------------------------------
 --USING MAPPED USER ID
 ------------------------------------------------------------------------------------------------------------------------
