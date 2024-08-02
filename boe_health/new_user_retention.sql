@@ -1,6 +1,7 @@
 ------------------------------------------------------------------------------------------------------------------------
 --USING VISITS W SEGMENTS: this way is wayyyy easier but slightly different buyer segments 
-------------------------------------------------------------------------------------------------------------------------  create or replace temp table first_visits as (
+------------------------------------------------------------------------------------------------------------------------  
+create or replace temp table first_visits as (
   select
   v.browser_id,
   v.browser_platform,
@@ -27,6 +28,7 @@ qualify row_number() over(partition by v.browser_id order by start_datetime desc
 create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention as (
 select 
 is_signed_in,
+first_app_visit,
 browser_platform,
 region,
 buyer_segment,--segment when they downloaded the app
