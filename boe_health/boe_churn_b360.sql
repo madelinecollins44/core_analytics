@@ -3,11 +3,13 @@ select
   _date
   , mapped_user_id
   , last_boe_visit_date
-  , last_visit_date
-  , case when last_visit_date > last_boe_visit_date then 'last_visit_not_boe' else null end
+  -- , last_visit_date
+  -- , case when last_visit_date > last_boe_visit_date then 'last_visit_not_boe' else null end
 from 
   etsy-data-warehouse-prod.buyer360.buyer_ltd
-limit 5
+where 
+  _date >= current_date-5
+  and last_visit_date <= current_date-365 -- excludes any user that has not visited in a year 
 )
 select
   a._date
@@ -24,7 +26,7 @@ from
   etsy-data-warehouse-prod.weblog.visits a
 left join 
   b360 b 
-    using (_date)
+    on a._date=b._date
 where 
   a._date >= current_date-5
   and a.platform in ('boe')
