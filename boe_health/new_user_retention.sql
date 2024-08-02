@@ -27,13 +27,13 @@ qualify row_number() over(partition by v.browser_id order by start_datetime desc
 
 create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention as (
 select 
-is_signed_in,
 first_app_visit,
+is_signed_in,
 browser_platform,
 region,
-buyer_segment,--segment when they downloaded the app
-count(distinct browser_id) as first_visit,
-count(distinct case when first_app_visit = next_visit_date then browser_id end) as same_day_visits,
+buyer_segment, --segment when they downloaded the app
+count(distinct browser_id) as browsers_with_first_visit,
+count(distinct case when first_app_visit = next_visit_date then browser_id end) as browsers_visit_in_same_day,
 count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as first_7_days,
 count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as first_14_days,
 count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as first_30_days,
