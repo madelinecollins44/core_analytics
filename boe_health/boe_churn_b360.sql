@@ -15,6 +15,7 @@ create table if not exists `etsy-data-warehouse-dev.rollups.boe_churn_segmentati
     , user_visit_boe_in_year int64
     , user_visit_other_platform_last_month int64
    , user_not_visit_last_month int64
+   , user_visit_last_month int64
 ); 
 
 set last_date = (select max(_date) from `etsy-data-warehouse-dev.rollups.boe_churn_segmentation`);
@@ -26,16 +27,17 @@ select
   _date
   , count(distinct case when last_visit_date >= current_date-365 then mapped_user_id end) as users_visit_in_last_year
   , count(distinct case when last_boe_visit_date = _date then mapped_user_id end) as user_visit_in_same_day
-  , count(distinct case when last_boe_visit_date <= _date - 6 then mapped_user_id end) as user_visit_boe_in_last_week
-  , count(distinct case when last_boe_visit_date <= _date - 14 then mapped_user_id end) as user_visit_boe_in_two_weeks
-  , count(distinct case when last_boe_visit_date <= _date - 20 then mapped_user_id end) as user_visit_boe_in_three_weeks
-  , count(distinct case when last_boe_visit_date <= _date - 29 then mapped_user_id end) as user_visit_boe_in_last_month
-  , count(distinct case when last_boe_visit_date <= _date - 89 then mapped_user_id end) as user_visit_boe_in_three_months
-  , count(distinct case when last_boe_visit_date <= _date - 179 then mapped_user_id end) as user_visit_boe_in_six_months
-  , count(distinct case when last_boe_visit_date <= _date - 364 then mapped_user_id end) as user_visit_boe_in_year
+  , count(distinct case when last_boe_visit_date >= _date - 6 then mapped_user_id end) as user_visit_boe_in_last_week
+  , count(distinct case when last_boe_visit_date >= _date - 14 then mapped_user_id end) as user_visit_boe_in_two_weeks
+  , count(distinct case when last_boe_visit_date >= _date - 20 then mapped_user_id end) as user_visit_boe_in_three_weeks
+  , count(distinct case when last_boe_visit_date >= _date - 29 then mapped_user_id end) as user_visit_boe_in_last_month
+  , count(distinct case when last_boe_visit_date >= _date - 89 then mapped_user_id end) as user_visit_boe_in_three_months
+  , count(distinct case when last_boe_visit_date >= _date - 179 then mapped_user_id end) as user_visit_boe_in_six_months
+  , count(distinct case when last_boe_visit_date >= _date - 364 then mapped_user_id end) as user_visit_boe_in_year
   --other buckets
   , count(distinct case when last_boe_visit_date >= _date - 29 and last_visit_date <= _date - 29 then mapped_user_id end) as user_visit_other_platform_last_month
-  , count(distinct case when last_visit_date >= _date - 29 then mapped_user_id end) as user_not_visit_last_month
+  , count(distinct case when last_boe_visit_date >= _date - 29 and last_visit_date >= _date - 29 then mapped_user_id end) as user_not_visit_last_month
+  , count(distinct case when last_boe_visit_date >= _date - 29 and last_visit_date <= _date - 29 then mapped_user_id end) as user_visit_last_month
 from 
   etsy-data-warehouse-prod.buyer360.buyer_ltd
 where 
