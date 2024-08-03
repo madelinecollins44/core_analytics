@@ -9,7 +9,7 @@ create table if not exists `etsy-data-warehouse-dev.rollups.boe_churn_segmentati
     , user_visit_boe_in_last_week int64
     , user_visit_boe_in_two_weeks int64
     , user_visit_boe_in_three_weeks int64
-    , user_visit_boe_in_last_months int64
+    , user_visit_boe_in_last_month int64
     , user_visit_boe_in_three_months int64
     , user_visit_boe_in_six_months int64
     , user_visit_boe_in_year int64
