@@ -31,8 +31,6 @@ select
   , count(distinct case when last_boe_visit_date <= _date - 89 then mapped_user_id end) as user_visit_boe_in_three_months
   , count(distinct case when last_boe_visit_date <= _date - 179 then mapped_user_id end) as user_visit_boe_in_six_months
   , count(distinct case when last_boe_visit_date <= _date - 364 then mapped_user_id end) as user_visit_boe_in_year
-  --comparison to web metrics
-    , count(distinct case when last_boe_visit_date <= _date - 364 then mapped_user_id end) as user_visit_boe_in_year
 
 from 
   etsy-data-warehouse-prod.buyer360.buyer_ltd
