@@ -1,6 +1,6 @@
 declare last_date date;
 
--- drop table if exists `etsy-data-warehouse-dev.rollups.boe_churn_segmentation`;
+drop table if exists `etsy-data-warehouse-dev.rollups.boe_churn_segmentation`;
 
 create table if not exists `etsy-data-warehouse-dev.rollups.boe_churn_segmentation`  (
     _date date
@@ -13,6 +13,8 @@ create table if not exists `etsy-data-warehouse-dev.rollups.boe_churn_segmentati
     , user_visit_boe_in_three_months int64
     , user_visit_boe_in_six_months int64
     , user_visit_boe_in_year int64
+    , user_visit_other_platform_last_month int64
+   , user_not_visit_last_month int64
 ); 
 
 set last_date = (select max(_date) from `etsy-data-warehouse-dev.rollups.boe_churn_segmentation`);
@@ -31,7 +33,9 @@ select
   , count(distinct case when last_boe_visit_date <= _date - 89 then mapped_user_id end) as user_visit_boe_in_three_months
   , count(distinct case when last_boe_visit_date <= _date - 179 then mapped_user_id end) as user_visit_boe_in_six_months
   , count(distinct case when last_boe_visit_date <= _date - 364 then mapped_user_id end) as user_visit_boe_in_year
-
+  --other buckets
+  , count(distinct case when last_boe_visit_date >= _date - 29 and last_visit_date <= _date - 29 then mapped_user_id end) as user_visit_other_platform_last_month
+  , count(distinct case when last_visit_date >= _date - 29 then mapped_user_id end) as user_not_visit_last_month
 from 
   etsy-data-warehouse-prod.buyer360.buyer_ltd
 where 
