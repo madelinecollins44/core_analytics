@@ -1,4 +1,39 @@
-create or replace table etsy-data-warehouse-dev.madelinecollins.boe_tab_engagement as (
+--owner: madelinecollins@etsy.com
+--owner_team: product-asf@etsy.com
+--description: a rollup for measuring engagement with the gift mode discovery experience
+
+BEGIN
+
+declare last_date date;
+
+drop table if exists `etsy-data-warehouse-dev.rollups.boe_tab_engagement`;
+
+set last_date = (select max(_date) from `etsy-data-warehouse-dev.rollups.boe_tab_engagement`);
+ if last_date is null then set last_date = (select min(_date)-1 from `etsy-data-warehouse-prod.weblog.events`);
+ end if;
+
+create or replace table `etsy-data-warehouse-dev.rollups.boe_tab_engagement` as (
+  _date
+  , v.browser_platform
+  , v.region
+  , buyer_segment
+  , signed_in
+  , total_visits
+  , home_visits
+  , deals_visits
+  , gift_mode_home_visits
+  , favorites_visits
+  , cart_view_visits
+  , search_visits
+  , one_plus_tabs
+  , two_plus_tabs
+  , three_plus_tabs
+  , four_plus_tabs
+  , five_plus_tabs
+  , six_plus_tabs
+);
+
+insert into `etsy-data-warehouse-dev.rollups.boe_tab_engagement` (
 with small_events as (
 select
 a.event_type,
