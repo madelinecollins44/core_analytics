@@ -57,3 +57,38 @@ CREATE OR REPLACE TABLE `etsy-data-warehouse-dev.madelinecollins.first_app_visit
   FROM first_app_visits
   GROUP BY 1
 );
+
+
+
+----------testing 
+-- select * from etsy-data-warehouse-dev.madelinecollins.first_app_visit_test where first_boe_buyer_segment is not null 
+
+select
+start_datetime, visit_id
+from etsy-data-warehouse-prod.weblog.visits v
+INNER JOIN `etsy-data-warehouse-prod.user_mart.user_mapping` u on v.user_id = u.user_id
+where 
+(mapped_user_id = 183022571 or mapped_user_id = 73365265 or mapped_user_id = 816204040)
+and v._date >= current_date-15
+and app_name in ('ios-EtsyInc','android-EtsyInc') 
+QUALIFY ROW_NUMBER() OVER (PARTITION BY mapped_user_id ORDER BY start_datetime) = 1
+
+--mapped user id, first visit id 
+--183022571, 2FF477C5A31E40189F435B4B0464.1721870848611.1
+--73365265, vR40UyEoRySgO_GLCVpogA.1721753149139.1
+--816204040, 17BDEB80CF2D47078BE999B7CEB1.1721576281616.1
+
+---test to make sure everything is unique 
+-- select mapped_user_id, count(*) from `etsy-data-warehouse-dev.madelinecollins.first_app_visit_test` group by 1 order by 2 desc
+
+select visit_id, count(*) from etsy-bigquery-adhoc-prod._script0c341a53b6e44e0daeb33014dad616dc9c1d50f0.first_app_visits group by all order by 2 desc
+-- 1
+
+select mapped_user_id, count(*) from etsy-bigquery-adhoc-prod._script0c341a53b6e44e0daeb33014dad616dc9c1d50f0.first_app_visits group by all order by 2 desc
+-- 2
+-- saw that some user_ids have 2 entries-- realized needed to look at app_type as well
+select * from etsy-bigquery-adhoc-prod._script0c341a53b6e44e0daeb33014dad616dc9c1d50f0.first_app_visits where mapped_user_id = 764158222
+
+select mapped_user_id, app_type, count(*) from etsy-bigquery-adhoc-prod._script0c341a53b6e44e0daeb33014dad616dc9c1d50f0.first_app_visits group by all order by 3 desc
+-- 2 
+ 
