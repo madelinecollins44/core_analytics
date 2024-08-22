@@ -76,28 +76,28 @@ with purchase_stats as (
   from purchase_stats p
 ); 
 
-create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention as (
-  select 
-  first_app_visit,
-  is_signed_in,
-  browser_platform,
-  region,
-  buyer_segment, --segment when they downloaded the app
-  count(distinct browser_id) as browsers_with_first_visit,
-  count(distinct case when first_app_visit = next_visit_date then browser_id end) as browsers_visit_in_same_day,
-  count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as browsers_visit_in_first_7_days,
-  count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as browsers_visit_in_first_14_days,
-  count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as browsers_visit_in_first_30_days,
-  --pct
-  count(distinct case when first_app_visit = next_visit_date then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_same_day,
-  count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_7_days,
-  count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_14_days,
-  count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_30_days
-  from first_visits
-  left join buyer_segments using (mapped_user_id, _date)
-  where first_app_visit <= current_date
-  group by all
-);
+-- create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention as (
+--   select 
+--   first_app_visit,
+--   is_signed_in,
+--   browser_platform,
+--   region,
+--   buyer_segment, --segment when they downloaded the app
+--   count(distinct browser_id) as browsers_with_first_visit,
+--   count(distinct case when first_app_visit = next_visit_date then browser_id end) as browsers_visit_in_same_day,
+--   count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as browsers_visit_in_first_7_days,
+--   count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as browsers_visit_in_first_14_days,
+--   count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as browsers_visit_in_first_30_days,
+--   --pct
+--   count(distinct case when first_app_visit = next_visit_date then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_same_day,
+--   count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_7_days,
+--   count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_14_days,
+--   count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_30_days
+--   from first_visits
+--   left join buyer_segments using (mapped_user_id, _date)
+--   where first_app_visit <= current_date
+--   group by all
+-- );
 
 create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention_yoy as (
 with yoy_union as (
@@ -175,6 +175,130 @@ SELECT
   FROM
     yoy_union
   WHERE first_app_visit < CAST(current_date() as DATETIME)
+
+
+
+--------same version but not as clean
+  create or replace temp table first_visits as (
+  select
+  v.browser_id,
+  v.browser_platform,
+  v.region,
+  v._date as first_app_visit,
+  v.user_id,
+  -- coalesce(cast(v.user_id as string), v.browser_id) as unique_id, -- coalescing here so even if user is signed out, user_id = null, then browser will be counted 
+  s.buyer_segment,
+  v.event_source,
+  v.start_datetime,
+  case when v.user_id is not null then 1 else 0 end as is_signed_in,
+  lead(v._date) over (partition by v.browser_id order by v.start_datetime asc) as next_visit_date
+from 
+  `etsy-data-warehouse-prod.weblog.visits` v  
+left join 
+    etsy-data-warehouse-prod.rollups.visits_w_segments s using (user_id, visit_id)
+  where v.platform = "boe"
+  and v._date is not null 
+  and v.event_source in ("ios", "android")
+  group by all
+qualify row_number() over(partition by v.browser_id order by start_datetime) = 1
+);
+
+create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention as (
+select 
+first_app_visit,
+is_signed_in,
+browser_platform,
+region,
+buyer_segment, --segment when they downloaded the app
+count(distinct browser_id) as browsers_with_first_visit,
+count(distinct case when first_app_visit = next_visit_date then browser_id end) as browsers_visit_in_same_day,
+count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as browsers_visit_in_first_7_days,
+count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as browsers_visit_in_first_14_days,
+count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as browsers_visit_in_first_30_days,
+--pct
+count(distinct case when first_app_visit = next_visit_date then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_same_day,
+count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_7_days,
+count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_14_days,
+count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_30_days
+from first_visits
+where first_app_visit <= current_date
+group by all
+);
+
+create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention_yoy as (
+with yoy_union as (
+select 
+  'ty' as era,
+  first_app_visit,
+  is_signed_in,
+  browser_platform,
+  region,
+  buyer_segment,--segment when they downloaded the app
+  -- agg totals for browser_id, again this is so signed out users are still counted 
+count(distinct browser_id) as browsers_with_first_visit,
+count(distinct case when first_app_visit = next_visit_date then browser_id end) as browsers_visit_in_same_day,
+count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as browsers_visit_in_first_7_days,
+count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as browsers_visit_in_first_14_days,
+count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as browsers_visit_in_first_30_days,
+  --pct
+count(distinct case when first_app_visit = next_visit_date then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_same_day,
+count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_7_days,
+count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_14_days,
+count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_30_days
+from first_visits
+group by all
+union all
+select
+  'ly' as era,
+  CAST(date_add(first_app_visit, interval 52 WEEK) as DATETIME) AS first_app_visit,
+  is_signed_in,
+  browser_platform,
+  region,
+  buyer_segment,--segment when they downloaded the app
+  -- agg totals for browser_id, again this is so signed out users are still counted 
+count(distinct browser_id) as browsers_with_first_visit,
+count(distinct case when first_app_visit = next_visit_date then browser_id end) as browsers_visit_in_same_day,
+count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as browsers_visit_in_first_7_days,
+count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as browsers_visit_in_first_14_days,
+count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as browsers_visit_in_first_30_days,
+  --pct
+count(distinct case when first_app_visit = next_visit_date then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_same_day,
+count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_7_days,
+count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_14_days,
+count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_30_days
+from first_visits
+group by all 
+)
+SELECT
+  era,
+  first_app_visit,
+  is_signed_in,
+  browser_platform,
+  region,
+  buyer_segment,
+  --ty metrics
+  sum(CASE WHEN era = 'ty' THEN browsers_with_first_visit END) AS ty_browsers_with_first_visit,
+  sum(CASE WHEN era = 'ty' THEN browsers_visit_in_first_7_days END) AS ty_browsers_visit_in_first_7_days,
+  sum(CASE WHEN era = 'ty' THEN browsers_visit_in_first_14_days END) AS ty_browsers_visit_in_first_14_days,
+  sum(CASE WHEN era = 'ty' THEN browsers_visit_in_first_30_days END) AS ty_browsers_visit_in_first_30_days,
+  sum(CASE WHEN era = 'ty' THEN pct_browsers_visit_in_same_day END) AS ty_pct_browsers_visit_in_same_day,
+  sum(CASE WHEN era = 'ty' THEN pct_browsers_visit_in_first_7_days END) AS ty_pct_browsers_visit_in_first_7_days,
+  sum(CASE WHEN era = 'ty' THEN pct_browsers_visit_in_first_14_days END) AS ty_pct_browsers_visit_in_first_14_days,
+  sum(CASE WHEN era = 'ty' THEN pct_browsers_visit_in_first_30_days END) AS ty_pct_browsers_visit_in_first_30_days,
+  --ly metrics
+  sum(CASE WHEN era = 'ly' THEN browsers_with_first_visit END) AS ly_browsers_with_first_visit,
+  sum(CASE WHEN era = 'ly' THEN browsers_visit_in_first_7_days END) AS ly_browsers_visit_in_first_7_days,
+  sum(CASE WHEN era = 'ly' THEN browsers_visit_in_first_14_days END) AS ly_browsers_visit_in_first_14_days,
+  sum(CASE WHEN era = 'ly' THEN browsers_visit_in_first_30_days END) AS ly_browsers_visit_in_first_30_days,
+  sum(CASE WHEN era = 'ly' THEN pct_browsers_visit_in_same_day END) AS ly_pct_browsers_visit_in_same_day,
+  sum(CASE WHEN era = 'ly' THEN pct_browsers_visit_in_first_7_days END) AS ly_pct_browsers_visit_in_first_7_days,
+  sum(CASE WHEN era = 'ly' THEN pct_browsers_visit_in_first_14_days END) AS ly_pct_browsers_visit_in_first_14_days,
+  sum(CASE WHEN era = 'ly' THEN pct_browsers_visit_in_first_30_days END) AS ly_pct_browsers_visit_in_first_30_days,
+  FROM
+    yoy_union
+  WHERE first_app_visit < CAST(current_date() as DATETIME)
+  GROUP BY all
+);
   GROUP BY all
 );
 
