@@ -63,41 +63,41 @@ with purchase_stats as (
   )
   select
     mapped_user_id, 
-    _date,
+    first_app_visit,
     CASE  
       when p.lifetime_purchase_days = 0 or p.lifetime_purchase_days is null then 'Zero Time'  
-      when date_diff(_date,p.first_purchase_date, DAY)<=180 and (p.lifetime_purchase_days=2 or round(cast(round(p.lifetime_gms,20) as numeric),2) >100.00) then 'High Potential' 
-      WHEN p.lifetime_purchase_days = 1 and date_diff(_date,p.first_purchase_date, DAY) <=365 then 'OTB'
+      when date_diff(first_app_visit, p.first_purchase_date, DAY)<=180 and (p.lifetime_purchase_days=2 or round(cast(round(p.lifetime_gms,20) as numeric),2) >100.00) then 'High Potential' 
+      WHEN p.lifetime_purchase_days = 1 and date_diff(first_app_visit, p.first_purchase_date, DAY) <=365 then 'OTB'
       when p.past_year_purchase_days >= 6 and p.past_year_gms >=200 then 'Habitual' 
       when p.past_year_purchase_days>=2 then 'Repeat' 
-      when date_diff(_date , p.last_purchase_date, DAY) >365 then 'Lapsed'
+      when date_diff(first_app_visit , p.last_purchase_date, DAY) >365 then 'Lapsed'
       else 'Active' 
       end as buyer_segment,
   from purchase_stats p
 ); 
 
--- create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention as (
---   select 
---   first_app_visit,
---   is_signed_in,
---   browser_platform,
---   region,
---   buyer_segment, --segment when they downloaded the app
---   count(distinct browser_id) as browsers_with_first_visit,
---   count(distinct case when first_app_visit = next_visit_date then browser_id end) as browsers_visit_in_same_day,
---   count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as browsers_visit_in_first_7_days,
---   count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as browsers_visit_in_first_14_days,
---   count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as browsers_visit_in_first_30_days,
---   --pct
---   count(distinct case when first_app_visit = next_visit_date then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_same_day,
---   count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_7_days,
---   count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_14_days,
---   count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_30_days
---   from first_visits
---   left join buyer_segments using (mapped_user_id, _date)
---   where first_app_visit <= current_date
---   group by all
--- );
+create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention as (
+  select 
+  first_app_visit,
+  is_signed_in,
+  browser_platform,
+  region,
+  buyer_segment, --segment when they downloaded the app
+  count(distinct browser_id) as browsers_with_first_visit,
+  count(distinct case when first_app_visit = next_visit_date then browser_id end) as browsers_visit_in_same_day,
+  count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end) as browsers_visit_in_first_7_days,
+  count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end) as browsers_visit_in_first_14_days,
+  count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end) as browsers_visit_in_first_30_days,
+  --pct
+  count(distinct case when first_app_visit = next_visit_date then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_same_day,
+  count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_7_days,
+  count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_14_days,
+  count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_30_days
+  from first_visits
+  left join buyer_segments using (mapped_user_id, first_app_visit)
+  where first_app_visit <= current_date
+  group by all
+);
 
 create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention_yoy as (
 with yoy_union as (
@@ -120,10 +120,8 @@ select
   count(distinct case when next_visit_date <= first_app_visit + 6 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_7_days,
   count(distinct case when next_visit_date <= first_app_visit + 13 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_14_days,
   count(distinct case when next_visit_date <= first_app_visit + 29 then browser_id end)/nullif(count(distinct browser_id),0) as pct_browsers_visit_in_first_30_days
-
 from first_visits
-left join buyer_segments using (mapped_user_id, _date)
-group by all
+  left join buyer_segments using (mapped_user_id, first_app_visit)group by all
 union all
 select
   'ly' as era,
@@ -179,6 +177,7 @@ SELECT
 );
 
 end 
+
 
   
 --------same version but not as clean
