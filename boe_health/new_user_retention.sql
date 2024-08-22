@@ -22,7 +22,7 @@ left join
   and v._date is not null 
   and v.event_source in ("ios", "android")
   group by all
-qualify row_number() over(partition by v.browser_id order by start_datetime desc) = 1
+qualify row_number() over(partition by v.browser_id order by start_datetime) = 1
 );
 
 create or replace table etsy-data-warehouse-dev.rollups.boe_user_retention as (
