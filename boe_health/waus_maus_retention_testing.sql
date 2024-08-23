@@ -95,3 +95,43 @@ with waus as (
 -- -- 2024-06-16	2024-06-16	0
 -- -- 2024-06-16	2024-06-23	1
 -- -- 2024-06-09	2024-06-16	1
+
+
+---test to see if top characteristcs are true
+select 
+    date_trunc(v._date, week) as week,
+    -- buyer_segment,
+    top_channel,
+    browser_platform,
+    region,
+    -- case when v.user_id is not null then 1 else 0 end as signed_in,
+    b.mapped_user_id,
+    count(distinct v.visit_id) as visits,
+    sum(v.total_gms) as gms,
+  from 
+    etsy-data-warehouse-prod.weblog.visits v 
+  left join  
+    etsy-data-warehouse-prod.user_mart.user_mapping b 
+      on v.user_id=b.user_id 
+  -- left join 
+  --   buyer_segment s --grabs buyer_segment at beginning of week
+  --     on b.mapped_user_id=s.mapped_user_id
+  --     and v._date=s._date
+  where platform = "boe"
+    and v._date >= "2024-05-01"
+    and v._date != "2024-02-29"
+    and b.mapped_user_id=185486287
+  group by all
+-- week	top_channel	browser_platform	region	mapped_user_id	visits	gms
+-- 2024-06-02	direct	iOS	US	185486287	1	0
+-- 2024-05-19	direct	iOS	US	185486287	1	0
+-- 2024-07-21	direct	iOS	US	185486287	2	0
+-- 2024-05-05	direct	iOS	US	185486287	4	37.98
+-- 2024-05-12	internal	iOS	US	185486287	1	0
+-- 2024-05-05	internal	iOS	US	185486287	1	0
+-- 2024-05-12	push_lifecycle	iOS	US	185486287	1	0
+-- 2024-05-12	direct	iOS	US	185486287	6	0
+
+select * from etsy-bigquery-adhoc-prod._script00e252c815d08c127eb2cb1ed5bb7153033dd758.agg where mapped_user_id = 185486287
+-- mapped_user_id	top_channel	browser_platform	region	buyer_segment
+-- 185486287	direct	iOS	US	Repeat
