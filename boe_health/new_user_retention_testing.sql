@@ -210,3 +210,61 @@ qualify row_number() over(partition by v.browser_id order by start_datetime) = 1
 -- 4Y7ztkp31tinfHGn-1sBNxPaChTj	2024-07-19 13:10:55.000000 UTC		2024-07-19	
 -- JSjrE-6-TaWW6hTVmnpFog	2024-07-05 19:49:49.000000 UTC	820933413	2024-07-05	2024-08-14
 -- 3EA5D46E1F3B40C9BF72DF4C51E3	2024-07-31 09:29:16.000000 UTC		2024-07-31	2024-08-18
+
+-----------------CHECKING TO MAKE SURE YOY CALCS WORK RIGHT
+select sum(ty_users_with_first_visit)/ nullif(sum(ly_users_with_first_visit),0)-1 
+from etsy-data-warehouse-dev.rollups.boe_user_retention_yoy 
+----DOES NOT = 1
+
+
+select * from etsy-data-warehouse-dev.rollups.boe_user_retention_yoy 
+where ty_users_with_first_visit > 5 and ly_users_with_first_visit > 5
+limit 20
+-- first_app_visit	browser_platform	region	buyer_segment	ty_users_with_first_visit	ty_users_visit_in_same_day	ty_users_visit_in_first_7_days	ty_users_visit_in_first_14_days	ty_users_visit_in_first_30_days	ly_users_with_first_visit	ly_users_visit_in_first_7_days	ly_users_visit_in_first_14_days	ly_users_visit_in_first_30_days
+-- 2021-10-06	      Android	            NO	    Lapsed	        13	                          1	                            1	                          1	                                        2	                      10	                        0	                            0	                                0
+-- 2021-10-05	Android	MX	Lapsed	9	2	2	2	2	7	0	0	0
+-- 2023-05-19	Android	DO	Lapsed	43	1	2	2	3	9	0	0	0
+-- 2021-10-06	Android	DK	Lapsed	10	1	2	2	2	9	0	0	0
+-- 2022-08-29	unknown	CA	Zero Time	6	1	2	2	2	9	0	0	2
+-- 2022-10-22	Android	SG	Lapsed	8	2	3	3	3	7	0	0	1
+-- 2022-10-19	Android	BR	OTB	8	0	4	4	4	21	0	0	1
+-- 2019-12-11	iOS	FI	Zero Time	7	3	4	4	5	7	0	0	0
+-- 2020-07-31	iOS	EG	Zero Time	7	3	4	4	5	7	0	0	0
+-- 2023-02-20	Android	PK	Zero Time	10	1	4	4	4	7	0	0	1
+-- 2022-10-19	Android	BD	Lapsed	12	1	5	5	5	6	0	0	0
+-- 2021-02-16	Android	AR	Zero Time	7	4	5	5	5	6	0	0	0
+-- 2024-01-19	Android	BE	Lapsed	7	5	6	6	6	6	0	0	1
+  
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+  
+-- select CAST(date_sub(date('2024-08-01'), interval 52 WEEK) as DATETIME)
+
+------------with where filter on date
+select sum(ty_users_with_first_visit)/ nullif(sum(ly_users_with_first_visit),0)-1 
+from etsy-data-warehouse-dev.rollups.boe_user_retention_yoy 
+--0.17968680759722067
+
+select * from etsy-data-warehouse-dev.rollups.boe_user_retention_yoy
+where (first_app_visit = '2024-08-01' or first_app_visit = '2023-08-03') -- 8/3/23 is 52 weeks after 8/1/2024
+and browser_platform in ('iOS')
+and region in ('US')
+and buyer_segment in ('Zero Time')
+-- first_app_visit	browser_platform	region	buyer_segment	ty_users_with_first_visit	ty_users_visit_in_same_day	ty_users_visit_in_first_7_days	ty_users_visit_in_first_14_days	ty_users_visit_in_first_30_days	ly_users_with_first_visit	ly_users_visit_in_same_day	ly_users_visit_in_first_7_days	ly_users_visit_in_first_14_days	ly_users_visit_in_first_30_days
+-- 2024-08-01	iOS	US	Zero Time	9674	3523	6227	6821	7322	15005	5011	8896	9729	10601
+-- 2023-08-03	iOS	US	Zero Time	15005	5011	8896	9729	10601	17035	11339	13832	14432	15012
+
+
+------------without where filter on date
+------------without where filter on date
+select sum(ty_users_with_first_visit)/ nullif(sum(ly_users_with_first_visit),0)-1 
+from etsy-data-warehouse-dev.rollups.boe_user_retention_yoy 
+--0.0
+
+select * from etsy-data-warehouse-dev.rollups.boe_user_retention_yoy
+where (first_app_visit = '2024-08-01' or first_app_visit = '2023-08-03') -- 8/3/23 is 52 weeks after 8/1/2024
+and browser_platform in ('iOS')
+and region in ('US')
+and buyer_segment in ('Zero Time')
+-- first_app_visit	browser_platform	region	buyer_segment	ty_users_with_first_visit	ty_users_visit_in_same_day	ty_users_visit_in_first_7_days	ty_users_visit_in_first_14_days	ty_users_visit_in_first_30_days	ly_users_with_first_visit	ly_users_visit_in_same_day	ly_users_visit_in_first_7_days	ly_users_visit_in_first_14_days	ly_users_visit_in_first_30_days
+-- 2024-08-01	iOS	US	Zero Time	9674	3523	6227	6821	7322	15005	5011	8896	9729	10601
+-- 2023-08-03	iOS	US	Zero Time	15005	5011	8896	9729	10601	17035	11339	13832	14432	15012
