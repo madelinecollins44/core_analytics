@@ -1,28 +1,10 @@
 ----------TEST WITH MOST RECENT VERSION 
-select week, sum(ty_waus) as ty_waus, sum(ty_retained) as ty_retained, sum(ly_waus) as ly_waus, sum(ly_retained) as ly_retained from etsy-data-warehouse-dev.rollups.boe_waus_retention where week = '2024-08-25' or week= '2023-08-27'
-group by all
+select week, sum(ty_waus) as ty_waus, sum(ty_retained) as ty_retained, sum(ly_waus) as ly_waus, sum(ly_retained) as ly_retained 
+  from etsy-data-warehouse-dev.rollups.boe_waus_retention 
+  where week = '2024-08-25' or week= '2023-08-27' 
+  group by all 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
+----------------------------------------------------------------------------------------------------
 agg as (
   select
   nw.week,
