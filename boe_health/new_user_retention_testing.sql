@@ -268,3 +268,23 @@ and buyer_segment in ('Zero Time')
 -- first_app_visit	browser_platform	region	buyer_segment	ty_users_with_first_visit	ty_users_visit_in_same_day	ty_users_visit_in_first_7_days	ty_users_visit_in_first_14_days	ty_users_visit_in_first_30_days	ly_users_with_first_visit	ly_users_visit_in_same_day	ly_users_visit_in_first_7_days	ly_users_visit_in_first_14_days	ly_users_visit_in_first_30_days
 -- 2024-08-01	iOS	US	Zero Time	9674	3523	6227	6821	7322	15005	5011	8896	9729	10601
 -- 2023-08-03	iOS	US	Zero Time	15005	5011	8896	9729	10601	17035	11339	13832	14432	15012
+
+
+-----testing user counts across fields 
+select first_app_visit,
+sum(ty_users_with_first_visit) as ty_users_with_first_visit,
+sum(ty_users_visit_in_same_day) as ty_users_visit_in_same_day,
+sum(ty_users_visit_in_first_7_days) as ty_users_visit_in_first_7_days,
+sum(ty_users_visit_in_first_14_days) as ty_users_visit_in_first_14_days,
+sum(ty_users_visit_in_first_30_days) as ty_users_visit_in_first_30_days,
+sum(ly_users_with_first_visit) as ly_users_with_first_visit,
+sum(ly_users_visit_in_same_day) as ly_users_visit_in_same_day,
+sum(ly_users_visit_in_first_7_days) as ly_users_visit_in_first_7_days,
+sum(ly_users_visit_in_first_14_days) as ly_users_visit_in_first_14_days,
+sum(ly_users_visit_in_first_30_days) as ly_users_visit_in_first_30_days,
+from etsy-data-warehouse-prod.rollups.boe_user_retention_yoy
+where (first_app_visit = '2024-08-01' or first_app_visit = '2023-08-03') -- 8/3/23 is 52 weeks after 8/1/2024
+group by all 
+-- first_app_visit	ty_users_with_first_visit	ty_users_visit_in_same_day	ty_users_visit_in_first_7_days	ty_users_visit_in_first_14_days	ty_users_visit_in_first_30_days	ly_users_with_first_visit	ly_users_visit_in_same_day	ly_users_visit_in_first_7_days	ly_users_visit_in_first_14_days	ly_users_visit_in_first_30_days
+-- 2023-08-03	60834	22438	40486	43767	46780	70551	37991	54161	57367	60283
+-- 2024-08-01	46099	16921	30367	32912	34975	60834	22438	40486	43767	46780
