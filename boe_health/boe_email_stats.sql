@@ -1,4 +1,5 @@
 create or replace table `etsy-data-warehouse-dev.madelinecollins.boe_email_stats`  as (
+-- users that have visited boe in last year 
 with boe_users as (
   select 
     distinct user_id,
@@ -19,13 +20,16 @@ group by all
 , email_engagement as (
 select 
   d.utm_source
+  , count(distinct d.user_id) as users_delivered
+  , count(distinct o.user_id) as users_opens
+  , count(distinct c.user_id) as users_clicks
   , count(distinct d.euid) as delivered
   , count(distinct o.euid) as opens
   , count(distinct c.euid) as clicks
 from 
   boe_users u
-left join 
-  etsy-data-warehouse-prod.mail_mart.delivered d using (user_id)
+inner join 
+  etsy-data-warehouse-prod.mail_mart.delivered d using (user_id) -- only looks at deliveries from users that have visited boe in last year 
 left join 
   etsy-data-warehouse-prod.mail_mart.opens o
     on d.user_id = o.user_id
@@ -40,6 +44,9 @@ group by all
     a.utm_source
     , boe_subscribers 
     , total_subscribers 
+    , users_delivered
+    , users_opens
+    , users_clicks 
     , delivered
     , opens
     , clicks 
