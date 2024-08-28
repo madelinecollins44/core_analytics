@@ -168,7 +168,7 @@ with maus as (
     count(distinct visit_id) as visits,
     sum(total_gms) as gms,
   from 
-    visits v 
+   visits v 
   group by all
   )
 --now get the visits from the following month for each mapped user id
@@ -185,7 +185,7 @@ from maus
   select
   'ty' as era,
   nw.month,
-  vi.buyer_segment, 
+  b.buyer_segment, 
   vi.top_channel,
   vi.browser_platform,
   vi.region,
@@ -197,12 +197,13 @@ from
 left join 
   most_common_info vi
     using (mapped_user_id)
+left join buyer_segment b on nw.mapped_user_id=b.mapped_user_id 
 group by all 
 union all ----union here 
   select
   'ly' as era,
   date_add(nw.month, interval 52 month) as month,
-  vi.buyer_segment, 
+  b.buyer_segment, 
   vi.top_channel,
   vi.browser_platform,
   vi.region,
@@ -214,6 +215,7 @@ from
 left join 
   most_common_info vi
     using (mapped_user_id)
+left join buyer_segment b on nw.mapped_user_id=b.mapped_user_id
 where date_add(nw.month, interval 52 month) <= current_date-1 
 group by all 
 )
@@ -230,4 +232,5 @@ select
 from yy_union 
 group by all
 ); 
+
 end 
