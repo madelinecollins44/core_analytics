@@ -142,7 +142,7 @@ from
 left join 
   most_common_info vi
     using (mapped_user_id)
-left join buyer_segment b on nw.mapped_user_id=b.mapped_user_id and b.week=nw.week
+left join buyer_segment b on nw.mapped_user_id=b.mapped_user_id
 where date_add(nw.week, interval 52 week) <= current_date-1 
 group by all 
 )
