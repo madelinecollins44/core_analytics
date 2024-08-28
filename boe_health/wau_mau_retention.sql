@@ -7,7 +7,7 @@ create or replace temp table visits as (
     , v.top_channel
     , v.browser_platform
     , v.region
-    , m.buyer_segment -- would it be incorrect to grab buyer segment from here? 
+    -- , m.buyer_segment -- would it be incorrect to grab buyer segment from here? 
     , v.visit_id
     , v.total_gms
   from etsy-data-warehouse-prod.weblog.visits v
@@ -17,16 +17,75 @@ create or replace temp table visits as (
     and _date >= current_date-880 
     and v.user_id is not null) ;
 
+create or replace temp table user_date as (
+  select distinct
+    v._date
+    , mapped_user_id 
+  from visits v) ;
+
 create or replace temp table most_common_info as (
   select 
     mapped_user_id
   , approx_top_count(top_channel, 1)[offset(0)].value as top_channel  
   , approx_top_count(browser_platform, 1)[offset(0)].value as browser_platform
   , approx_top_count(region, 1)[offset(0)].value as region
-  , approx_top_count(buyer_segment, 1)[offset(0)].value as buyer_segment
+  -- , approx_top_count(buyer_segment, 1)[offset(0)].value as buyer_segment
   from visits
 group by all 
 );
+
+create or replace temp table buyer_segment as (
+with purchase_info as (
+  select
+      a.mapped_user_id, 
+      ex._date, 
+      min(date) AS first_purchase_date, 
+      max(date) AS last_purchase_date,
+      coalesce(sum(gms_net),0) AS lifetime_gms,
+      coalesce(count(DISTINCT date),0) AS lifetime_purchase_days, 
+      coalesce(count(DISTINCT receipt_id),0) AS lifetime_orders,
+      round(cast(round(coalesce(sum(CASE WHEN date between date_sub(_date, interval 365 DAY) and _date THEN gms_net END), CAST(0 as NUMERIC)),20) as numeric),2) AS past_year_gms,
+      count(DISTINCT CASE WHEN date between date_sub(_date, interval 365 DAY) and _date THEN date END) AS past_year_purchase_days,
+      count(DISTINCT CASE WHEN date between date_sub(_date, interval 365 DAY) and _date THEN receipt_id END) AS past_year_orders
+    from 
+      `etsy-data-warehouse-prod.user_mart.mapped_user_profile` a
+    join
+      user_date ex -- visits in the last two, for yoy calcs
+        ON ex.mapped_user_id = a.mapped_user_id
+    join 
+      `etsy-data-warehouse-prod.user_mart.user_mapping` b
+        on a.mapped_user_id = b.mapped_user_id
+    join 
+      `etsy-data-warehouse-prod.user_mart.user_first_visits` c
+        on b.user_id = c.user_id
+    left join 
+      `etsy-data-warehouse-prod.transaction_mart.transactions_gms_by_trans` e
+        on a.mapped_user_id = e.mapped_user_id 
+        and e.date <= ex._date-1 and market <> 'ipp'
+    GROUP BY all
+    having (ex._date >= min(date(timestamp_seconds(a.join_date))) or ex._date >= min(date(c.start_datetime)))
+  )
+  , all_segments as (
+  select
+    mapped_user_id, 
+    _date,
+    CASE  
+      when p.lifetime_purchase_days = 0 or p.lifetime_purchase_days is null then 'Zero Time'  
+      when date_diff(_date, p.first_purchase_date, DAY)<=180 and (p.lifetime_purchase_days=2 or round(cast(round(p.lifetime_gms,20) as numeric),2) >100.00) then 'High Potential' 
+      WHEN p.lifetime_purchase_days = 1 and date_diff(_date, p.first_purchase_date, DAY) <=365 then 'OTB'
+      when p.past_year_purchase_days >= 6 and p.past_year_gms >=200 then 'Habitual' 
+      when p.past_year_purchase_days>=2 then 'Repeat' 
+      when date_diff(_date , p.last_purchase_date, DAY) >365 then 'Lapsed'
+      else 'Active' 
+      end as buyer_segment,
+  from purchase_info p
+  group by all)
+select 
+  mapped_user_id
+  , approx_top_count(buyer_segment, 1)[offset(0)].value as buyer_segment
+from  all_segments 
+group by all
+); 
 
 create or replace table `etsy-data-warehouse-dev.rollups.boe_waus_retention` as (
 with waus as (
@@ -53,35 +112,37 @@ from waus
   select
   'ty' as era,
   nw.week,
-  vi.buyer_segment, 
+  b.buyer_segment, 
   vi.top_channel,
   vi.browser_platform,
   vi.region,
   count(nw.mapped_user_id) as waus, 
-  count(case when nw.next_visit_week = date_add(week, interval 1 week) then mapped_user_id end) as retained,
+  count(case when nw.next_visit_week = date_add(week, interval 1 week) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_week nw 
 left join 
   most_common_info vi
     using (mapped_user_id)
+left join buyer_segment b on nw.mapped_user_id=b.mapped_user_id 
 group by all 
 union all ----union here 
   select
   'ly' as era,
   date_add(nw.week, interval 52 week) as week,
-  vi.buyer_segment, 
+  b.buyer_segment, 
   vi.top_channel,
   vi.browser_platform,
   vi.region,
   count(nw.mapped_user_id) as waus, 
-  count(case when nw.next_visit_week = date_add(week, interval 1 week) then mapped_user_id end) as retained,
+  count(case when nw.next_visit_week = date_add(week, interval 1 week) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_week nw 
 left join 
   most_common_info vi
     using (mapped_user_id)
+left join buyer_segment b on nw.mapped_user_id=b.mapped_user_id and b.week=nw.week
 where date_add(nw.week, interval 52 week) <= current_date-1 
 group by all 
 )
@@ -129,7 +190,7 @@ from maus
   vi.browser_platform,
   vi.region,
   count(nw.mapped_user_id) as maus, 
-  count(case when nw.next_visit_month = date_add(month, interval 1 month) then mapped_user_id end) as retained,
+  count(case when nw.next_visit_month = date_add(month, interval 1 month) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_month nw 
@@ -146,7 +207,7 @@ union all ----union here
   vi.browser_platform,
   vi.region,
   count(nw.mapped_user_id) as maus, 
-  count(case when nw.next_visit_month = date_add(month, interval 1 month) then mapped_user_id end) as retained,
+  count(case when nw.next_visit_month = date_add(month, interval 1 month) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_month nw 
