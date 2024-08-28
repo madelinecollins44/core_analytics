@@ -37,7 +37,7 @@ left join
 left join etsy-data-warehouse-prod.mail_mart.clicks c
     on c.user_id = o.user_id
     and c.euid=o.euid
-where date(timestamp_seconds(d.send_date)) >= current_date-365
+-- where date(timestamp_seconds(d.delivered_date)) >= current_date-365
 group by all
 )
   select 
@@ -50,6 +50,6 @@ group by all
     , delivered
     , opens
     , clicks 
-from email_subscriptions a
-left join email_engagement b using (utm_source)
+from email_engagement a
+left join email_subscriptions b using (utm_source)
 );
