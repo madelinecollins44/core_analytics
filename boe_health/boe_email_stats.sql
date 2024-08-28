@@ -1,4 +1,4 @@
-create or replace table `etsy-data-warehouse-dev.madelinecollins.boe_email_stats` as (
+create or replace table `etsy-data-warehouse-dev.madelinecollins.boe_email_stats`  as (
 with boe_users as (
   select 
     distinct user_id,
@@ -16,6 +16,7 @@ left join
   boe_users a  using (user_id)
 group by all 
 )
+, email_engagement as (
 select 
   d.utm_source
   , count(distinct d.euid) as delivered
@@ -34,4 +35,14 @@ left join etsy-data-warehouse-prod.mail_mart.clicks c
     and c.euid=o.euid
 where date(timestamp_seconds(d.send_date)) >= current_date-365
 group by all
+)
+  select 
+    a.utm_source
+    , boe_subscribers 
+    , total_subscribers 
+    , delivered
+    , opens
+    , clicks 
+from email_subscriptions a
+left join email_engagement b using (utm_source)
 );
