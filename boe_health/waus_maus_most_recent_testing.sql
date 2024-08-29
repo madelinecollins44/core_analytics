@@ -1,5 +1,21 @@
--- select month, mapped_user_id, count(*) from etsy-data-warehouse-dev.rollups.boe_maus_retention group by all order by 3 desc
+--/////////////////- check to make sure all users are accounted for 
+select count(distinct mapped_user_id) from etsy-bigquery-adhoc-prod._scriptf9ed6cd6300e97b5bc2b9a9f6f74e736e1bca79b.visits
+--104875313
 
+select count(distinct mapped_user_id), count(*) from etsy-bigquery-adhoc-prod._scriptf9ed6cd6300e97b5bc2b9a9f6f74e736e1bca79b.most_recent_info
+--104875313, 104875313
+
+select count(distinct mapped_user_id), count(*) from etsy-bigquery-adhoc-prod._scriptf9ed6cd6300e97b5bc2b9a9f6f74e736e1bca79b.buyer_segment
+--104875313, 104875313
+
+select count(distinct mapped_user_id), count(*) from etsy-data-warehouse-dev.rollups.boe_waus_retention_most_recent
+--
+
+select count(distinct mapped_user_id), count(*) from etsy-data-warehouse-dev.rollups.boe_maus_retention_most_recent
+--
+
+--/////////////////- 
+-- select month, mapped_user_id, count(*) from etsy-data-warehouse-dev.rollups.boe_maus_retention group by all order by 3 desc
 select * from  etsy-data-warehouse-dev.rollups.boe_maus_retention where mapped_user_id = 929317673
 -- month	buyer_segment	top_channel	browser_platform	region	mapped_user_id	ty_maus	ty_retained	ly_maus	ly_retained
 -- 2024-07-01	Active	direct	iOS	FR	929317673	1	0		
@@ -16,7 +32,7 @@ select week, sum(ty_waus) as ty_waus, sum(ty_retained) as ty_retained, sum(ly_wa
 -- 2024-08-25	10599418	0	16874082	9966875
 
 
------test specific user id
+--/////////////////- test specific user id
 select * from etsy-data-warehouse-dev.rollups.boe_waus_retention_most_recent where mapped_user_id = 532632418 order by week asc
 -- week	buyer_segment	top_channel	browser_platform	region	mapped_user_id	ty_waus	ty_retained	ly_waus	ly_retained
 -- 2022-03-27	Repeat	direct	iOS	US	532632418	1	0		
