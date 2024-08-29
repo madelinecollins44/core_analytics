@@ -21,6 +21,7 @@ create or replace temp table visits as (
 create or replace temp table most_recent_info as (
   select 
     mapped_user_id
+    , _date
     , top_channel
     , browser_platform
     , region
@@ -30,7 +31,55 @@ where visit_number = 1
 group by all 
 );
 
-create or replace table `etsy-data-warehouse-dev.rollups.boe_waus_retention` as (
+--get buyer segment from most recent visit 
+create or replace temp table buyer_segment as (
+with purchase_info as (
+  select
+      a.mapped_user_id, 
+      ex._date, 
+      min(date) AS first_purchase_date, 
+      max(date) AS last_purchase_date,
+      coalesce(sum(gms_net),0) AS lifetime_gms,
+      coalesce(count(DISTINCT date),0) AS lifetime_purchase_days, 
+      coalesce(count(DISTINCT receipt_id),0) AS lifetime_orders,
+      round(cast(round(coalesce(sum(CASE WHEN date between date_sub(_date, interval 365 DAY) and _date THEN gms_net END), CAST(0 as NUMERIC)),20) as numeric),2) AS past_year_gms,
+      count(DISTINCT CASE WHEN date between date_sub(_date, interval 365 DAY) and _date THEN date END) AS past_year_purchase_days,
+      count(DISTINCT CASE WHEN date between date_sub(_date, interval 365 DAY) and _date THEN receipt_id END) AS past_year_orders
+    from 
+      `etsy-data-warehouse-prod.user_mart.mapped_user_profile` a
+    join
+      most_recent_info ex -- visits in the last two, for yoy calcs
+        ON ex.mapped_user_id = a.mapped_user_id
+    join 
+      `etsy-data-warehouse-prod.user_mart.user_mapping` b
+        on a.mapped_user_id = b.mapped_user_id
+    join 
+      `etsy-data-warehouse-prod.user_mart.user_first_visits` c
+        on b.user_id = c.user_id
+    left join 
+      `etsy-data-warehouse-prod.transaction_mart.transactions_gms_by_trans` e
+        on a.mapped_user_id = e.mapped_user_id 
+        and e.date <= ex._date-1 and market <> 'ipp'
+    GROUP BY all
+    having (ex._date >= min(date(timestamp_seconds(a.join_date))) or ex._date >= min(date(c.start_datetime)))
+  )
+  select
+    mapped_user_id, 
+    _date,
+    CASE  
+      when p.lifetime_purchase_days = 0 or p.lifetime_purchase_days is null then 'Zero Time'  
+      when date_diff(_date, p.first_purchase_date, DAY)<=180 and (p.lifetime_purchase_days=2 or round(cast(round(p.lifetime_gms,20) as numeric),2) >100.00) then 'High Potential' 
+      WHEN p.lifetime_purchase_days = 1 and date_diff(_date, p.first_purchase_date, DAY) <=365 then 'OTB'
+      when p.past_year_purchase_days >= 6 and p.past_year_gms >=200 then 'Habitual' 
+      when p.past_year_purchase_days>=2 then 'Repeat' 
+      when date_diff(_date , p.last_purchase_date, DAY) >365 then 'Lapsed'
+      else 'Active' 
+      end as buyer_segment,
+  from purchase_info p
+  group by all
+); 
+
+create or replace table `etsy-data-warehouse-dev.rollups.boe_waus_retention_most_recent` as (
 with waus as (
   select 
     date_trunc(v._date, week) as week,
@@ -59,14 +108,18 @@ from waus
   vi.top_channel,
   vi.browser_platform,
   vi.region,
+  nw.mapped_user_id,
   count(nw.mapped_user_id) as waus, 
-  count(case when nw.next_visit_week = date_add(week, interval 1 week) then mapped_user_id end) as retained,
+  count(case when nw.next_visit_week = date_add(week, interval 1 week) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_week nw 
 left join 
   most_recent_info vi
     using (mapped_user_id)
+left join 
+  buyer_segment b 
+    on nw.mapped_user_id=b.mapped_user_id
 group by all 
 union all ----union here 
   select
@@ -76,14 +129,18 @@ union all ----union here
   vi.top_channel,
   vi.browser_platform,
   vi.region,
+  nw.mapped_user_id,
   count(nw.mapped_user_id) as waus, 
-  count(case when nw.next_visit_week = date_add(week, interval 1 week) then mapped_user_id end) as retained,
+  count(case when nw.next_visit_week = date_add(week, interval 1 week) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_week nw 
 left join 
   most_recent_info vi
     using (mapped_user_id)
+left join 
+  buyer_segment b 
+    on nw.mapped_user_id=b.mapped_user_id
 where date_add(nw.week, interval 52 week) <= current_date-1 
 group by all 
 )
@@ -93,6 +150,7 @@ select
   top_channel,
   browser_platform,
   region,
+  mapped_user_id,
   sum(case when era = 'ty' then waus end) AS ty_waus,
   sum(case when era = 'ty' then retained end) AS ty_retained,
   sum(case when era = 'ly' then waus end) AS ly_waus,
@@ -101,7 +159,7 @@ from yy_union
 group by all
 ); 
 
-create or replace table `etsy-data-warehouse-dev.rollups.boe_maus_retention` as (
+create or replace table `etsy-data-warehouse-dev.rollups.boe_maus_retention_most_recent` as (
 with maus as (
   select 
     date_trunc(v._date, month) as month,
@@ -130,14 +188,18 @@ from maus
   vi.top_channel,
   vi.browser_platform,
   vi.region,
+  nw.mapped_user_id,
   count(nw.mapped_user_id) as maus, 
-  count(case when nw.next_visit_month = date_add(month, interval 1 month) then mapped_user_id end) as retained,
+  count(case when nw.next_visit_month = date_add(month, interval 1 month) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_month nw 
 left join 
   most_recent_info vi
     using (mapped_user_id)
+left join 
+  buyer_segment b 
+    on nw.mapped_user_id=b.mapped_user_id
 group by all 
 union all ----union here 
   select
@@ -147,14 +209,18 @@ union all ----union here
   vi.top_channel,
   vi.browser_platform,
   vi.region,
+  nw.mapped_user_id,
   count(nw.mapped_user_id) as maus, 
-  count(case when nw.next_visit_month = date_add(month, interval 1 month) then mapped_user_id end) as retained,
+  count(case when nw.next_visit_month = date_add(month, interval 1 month) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_month nw 
 left join 
   most_recent_info vi
     using (mapped_user_id)
+left join 
+  buyer_segment b 
+    on nw.mapped_user_id=b.mapped_user_id
 where date_add(nw.month, interval 52 month) <= current_date-1 
 group by all 
 )
@@ -164,6 +230,7 @@ select
   top_channel,
   browser_platform,
   region,
+  mapped_user_id,
   sum(case when era = 'ty' then maus end) AS ty_maus,
   sum(case when era = 'ty' then retained end) AS ty_retained,
   sum(case when era = 'ly' then maus end) AS ly_maus,
@@ -171,5 +238,4 @@ select
 from yy_union 
 group by all
 ); 
-
 end 
