@@ -7,7 +7,6 @@ create or replace temp table visits as (
     , v.top_channel
     , v.browser_platform
     , v.region
-    -- , m.buyer_segment -- would it be incorrect to grab buyer segment from here? 
     , v.visit_id
     , v.total_gms
   from etsy-data-warehouse-prod.weblog.visits v
@@ -29,7 +28,6 @@ create or replace temp table most_common_info as (
   , approx_top_count(top_channel, 1)[offset(0)].value as top_channel  
   , approx_top_count(browser_platform, 1)[offset(0)].value as browser_platform
   , approx_top_count(region, 1)[offset(0)].value as region
-  -- , approx_top_count(buyer_segment, 1)[offset(0)].value as buyer_segment
   from visits
 group by all 
 );
