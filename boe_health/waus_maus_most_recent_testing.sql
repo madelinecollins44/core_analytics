@@ -1,4 +1,42 @@
---/////////////////- check to make sure all users are accounted for 
+--/////////////////---/////////////////---/////////////////---/////////////////---/////////////////---/////////////////---/////////////////---/////////////////---/////////////////---/////////////////- 
+--confirm w source of truth 
+-- WAU Retention
+with waus as (
+  select 
+    -- date_trunc(_date, week) as week,
+    date_trunc(_date, month) as month,
+    v.user_id,
+    count(*) as visits,
+    sum(total_gms) as gms
+  from `etsy-data-warehouse-prod.weblog.visits` v  
+  where platform = "boe"
+    and _date >= current_date-365
+    and v.user_id > 0
+  group by 1,2
+  ),
+next_visit_weeks as (
+  select *,
+    -- lead(week) over (partition by user_id order by week asc) as next_visit_week 
+    lead(month) over (partition by user_id order by month asc) as next_visit_month
+  from waus 
+  )
+, agg as (select 
+  -- week,
+  month,
+  count(*) as waus,
+  -- count(case when next_visit_week = date_add(month, interval 1 month) then user_id end) as retained
+  count(case when next_visit_month = date_add(month, interval 1 month) then user_id end) as retained,
+from next_visit_weeks 
+group by 1
+order by 1
+)
+select sum(retained)/ sum(waus) as pct_retained from agg
+
+----weekly: 0.56679995549650486
+----monthly: 0.67179557162312253
+  
+--/////////////////---/////////////////---/////////////////---/////////////////---/////////////////---/////////////////-
+--check to make sure all users are accounted for 
 select count(distinct mapped_user_id) from etsy-bigquery-adhoc-prod._scriptf9ed6cd6300e97b5bc2b9a9f6f74e736e1bca79b.visits
 --104875313
 
