@@ -106,8 +106,8 @@ with purchase_info as (
     _date,
     date_trunc(_date, week(MONDAY)) as week,
     date_trunc(_date, month) as month,
-    row_number() over (partition by mapped_user_id, date_trunc(_date, week(MONDAY)) order by _date) as number_week,
-    row_number() over (partition by mapped_user_id, date_trunc(_date, month) order by _date) as number_month,
+    row_number() over (partition by mapped_user_id, date_trunc(_date, week(MONDAY)) order by _date) as number_week,-- first segment of the week
+    row_number() over (partition by mapped_user_id, date_trunc(_date, month) order by _date) as number_month, -- first segment of the month
     CASE  
       when p.lifetime_purchase_days = 0 or p.lifetime_purchase_days is null then 'Zero Time'  
       when date_diff(_date, p.first_purchase_date, DAY)<=180 and (p.lifetime_purchase_days=2 or round(cast(round(p.lifetime_gms,20) as numeric),2) >100.00) then 'High Potential' 
