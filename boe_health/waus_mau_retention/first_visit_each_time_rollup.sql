@@ -120,6 +120,7 @@ with purchase_info as (
   group by all
 ); 
 
+
 create or replace table `etsy-data-warehouse-dev.rollups.boe_waus_retention` as (
 with waus as (
   select 
@@ -128,9 +129,8 @@ with waus as (
     count(distinct visit_id) as visits,
     sum(total_gms) as gms,
   from 
-   visits v 
-  group by all
-  )
+   visits 
+  group by all)
 , next_visit_week as (
 select  
   week, 
@@ -144,59 +144,45 @@ from waus
   select
   'ty' as era,
   nw.week,
-  b.buyer_segment, 
-  vi.top_channel,
-  vi.browser_platform,
-  vi.region,
+  nw.mapped_user_id,
   count(nw.mapped_user_id) as waus, 
   count(case when nw.next_visit_week = date_add(nw.week, interval 1 week) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_week nw 
-left join 
-  most_recent_week vi
-    using (mapped_user_id, week)
-left join 
-  buyer_segment b 
-    on nw.mapped_user_id=b.mapped_user_id
-    and nw.week = b.week
 group by all 
 union all ----union here 
   select
   'ly' as era,
   date_add(nw.week, interval 52 week) as week,
-  b.buyer_segment, 
-  vi.top_channel,
-  vi.browser_platform,
-  vi.region,
+   nw.mapped_user_id,
   count(nw.mapped_user_id) as waus, 
   count(case when nw.next_visit_week = date_add(nw.week, interval 1 week) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_week nw 
-left join 
-  most_recent_week vi
-    using (mapped_user_id, week)
-left join 
-  buyer_segment b 
-    on nw.mapped_user_id=b.mapped_user_id
-    and nw.week = b.week
 where date_add(nw.week, interval 52 week) <= current_date-1 
 group by all 
 )
-select
-  week,
-  buyer_segment, 
-  top_channel,
-  browser_platform,
-  region,
+  select
+  u.week,
+  bs.buyer_segment, 
+  rw.top_channel,
+  rw.browser_platform,
+  u.mapped_user_id,
+  rw.region,
   sum(case when era = 'ty' then waus end) AS ty_waus,
   sum(case when era = 'ty' then retained end) AS ty_retained,
   sum(case when era = 'ly' then waus end) AS ly_waus,
   sum(case when era = 'ly' then retained end) AS ly_retained,
-from yy_union 
+from yy_union u
+left join most_recent_week rw 
+  using (mapped_user_id, week)
+left join buyer_segment bs
+  on u.mapped_user_id=bs.mapped_user_id
+  and u.week=bs.week
 group by all
-); 
+);
 
 create or replace table `etsy-data-warehouse-dev.rollups.boe_maus_retention` as (
 with maus as (
@@ -206,9 +192,8 @@ with maus as (
     count(distinct visit_id) as visits,
     sum(total_gms) as gms,
   from 
-    visits v 
-  group by all
-  )
+   visits 
+  group by all)
 , next_visit_month as (
 select  
   month, 
@@ -222,58 +207,44 @@ from maus
   select
   'ty' as era,
   nw.month,
-  b.buyer_segment, 
-  vi.top_channel,
-  vi.browser_platform,
-  vi.region,
+  nw.mapped_user_id,
   count(nw.mapped_user_id) as maus, 
   count(case when nw.next_visit_month = date_add(nw.month, interval 1 month) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_month nw 
-left join 
-  most_recent_month vi
-    using (mapped_user_id, month)
-left join 
-  buyer_segment b 
-    on nw.mapped_user_id=b.mapped_user_id
-    and nw.month = b.month
 group by all 
 union all ----union here 
   select
   'ly' as era,
-  date_add(nw.month, interval 12 month) as month,
-  b.buyer_segment, 
-  vi.top_channel,
-  vi.browser_platform,
-  vi.region,
+  date_add(nw.month, interval 52 month) as month,
+   nw.mapped_user_id,
   count(nw.mapped_user_id) as maus, 
   count(case when nw.next_visit_month = date_add(nw.month, interval 1 month) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_month nw 
-left join 
-  most_recent_month vi
-    using (mapped_user_id, month)
-left join 
-  buyer_segment b 
-    on nw.mapped_user_id=b.mapped_user_id
-    and nw.month = b.month
-where date_add(nw.month, interval 12 month) <= current_date-1 
+where date_add(nw.month, interval 52 month) <= current_date-1 
 group by all 
 )
-select
-  month,
-  buyer_segment, 
-  top_channel,
-  browser_platform,
-  region,
+  select
+  u.month,
+  bs.buyer_segment, 
+  rw.top_channel,
+  rw.browser_platform,
+  u.mapped_user_id,
+  rw.region,
   sum(case when era = 'ty' then maus end) AS ty_maus,
   sum(case when era = 'ty' then retained end) AS ty_retained,
   sum(case when era = 'ly' then maus end) AS ly_maus,
   sum(case when era = 'ly' then retained end) AS ly_retained,
-from yy_union 
+from yy_union u
+left join most_recent_month rw 
+  using (mapped_user_id, month)
+left join buyer_segment bs
+  on u.mapped_user_id=bs.mapped_user_id
+  and u.month=bs.month
 group by all
-); 
+);
 
 end 
