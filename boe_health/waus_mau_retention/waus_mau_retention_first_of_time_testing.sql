@@ -1,19 +1,14 @@
 ----see if new rollup matches old one 
-select sum(ty_waus) as waus, sum(ty_retained) as retained, sum(ly_waus) as ly_waus, sum(ly_retained) as ly_retained from eetsy-data-warehouse-dev.rollups.boe_waus_retention
-where top_channel in ('direct')
-and browser_platform in ('iOS')
-and region in ('US')
-and week in ('2024-06-10')
--- waus	    retained	    ly_waus	      ly_retained
--- 6944755	3901674	      7141054	      4199922
+select sum(ty_waus) as waus, sum(ty_retained) as retained, sum(ly_waus) as ly_waus, sum(ly_retained) as ly_retained from etsy-data-warehouse-prod.rollups.boe_waus_retention
+where week in ('2024-06-10')
+-- waus	      retained    	ly_waus	      ly_retained
+-- 16212949	  8844638	      16061731	      9177131
 
-select sum(ty_waus) as waus, sum(ty_retained) as retained, sum(ly_waus) as ly_waus, sum(ly_retained) as ly_retained from etsy-data-warehouse-dev.madelinecollins.waus_retention_first_visit
-where top_channel in ('direct')
-and browser_platform in ('iOS')
-and region in ('US')
-and week in ('2024-06-10')
--- waus	    retained	    ly_waus	    ly_retained
--- 7077293	4002842	      2901389	      2017453
+select sum(ty_waus) as waus, sum(ty_retained) as retained, sum(ly_waus) as ly_waus, sum(ly_retained) as ly_retained from `etsy-data-warehouse-dev.madelinecollins.waus_retention_recent` 
+where week in ('2024-06-10')
+-- waus	      retained	    ly_waus     	ly_retained
+-- 16212949	    8844638	    16061731	      9177131
+
     
 ----testing to see if row counting is correct
 with agg as (select 
