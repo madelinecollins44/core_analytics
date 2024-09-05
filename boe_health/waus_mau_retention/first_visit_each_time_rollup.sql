@@ -106,8 +106,8 @@ with purchase_info as (
   select
     mapped_user_id, 
     _date,
-    date_trunc(v._date, week(MONDAY)) as week,
-    date_trunc(v._date, month) as month,
+    date_trunc(_date, week(MONDAY)) as week,
+    date_trunc(_date, month) as month,
     CASE  
       when p.lifetime_purchase_days = 0 or p.lifetime_purchase_days is null then 'Zero Time'  
       when date_diff(_date, p.first_purchase_date, DAY)<=180 and (p.lifetime_purchase_days=2 or round(cast(round(p.lifetime_gms,20) as numeric),2) >100.00) then 'High Potential' 
