@@ -17,16 +17,14 @@ create or replace temp table visits as (
     , v.region
     , v.visit_id
     , v.total_gms
-    , row_number() over (partition by m.mapped_user_id, date_trunc(v._date, week(MONDAY)) order by _date) as visit_number_week
-    , row_number() over (partition by m.mapped_user_id, date_trunc(v._date, month) order by _date) as visit_number_month
+    , row_number() over (partition by m.mapped_user_id, date_trunc(v._date, week(MONDAY)) order by _date desc) as visit_number_week
+    , row_number() over (partition by m.mapped_user_id, date_trunc(v._date, month) order by _date desc) as visit_number_month
   from etsy-data-warehouse-prod.weblog.visits v
   join etsy-data-warehouse-prod.user_mart.mapped_user_profile m using (user_id)
   where 
     platform in ('boe') 
     and _date >= current_date-880 
-    -- and v.user_id is not null
-    and mapped_user_id= 929317673
-    ) ;
+    and v.user_id is not null ) ;
 
 --grabs most recent visit info 
 create or replace temp table most_recent_week as (
@@ -55,6 +53,7 @@ where visit_number_month = 1
 group by all 
 );
 
+--only need the buyer segment for first visit of each month/ week
 create or replace temp table combine_dates as (
  with _dates as (
 select 
@@ -124,7 +123,7 @@ with purchase_info as (
 create or replace table `etsy-data-warehouse-dev.rollups.boe_waus_retention` as (
 with waus as (
   select 
-    date_trunc(v._date, week(MONDAY)) as week,
+    week,
     mapped_user_id,
     count(distinct visit_id) as visits,
     sum(total_gms) as gms,
@@ -146,7 +145,6 @@ from waus
   'ty' as era,
   nw.week,
   b.buyer_segment, 
-  nw.mapped_user_id, 
   vi.top_channel,
   vi.browser_platform,
   vi.region,
@@ -168,7 +166,6 @@ union all ----union here
   'ly' as era,
   date_add(nw.week, interval 52 week) as week,
   b.buyer_segment, 
-   nw.mapped_user_id,
   vi.top_channel,
   vi.browser_platform,
   vi.region,
@@ -190,7 +187,6 @@ group by all
 select
   week,
   buyer_segment, 
-  mapped_user_id, 
   top_channel,
   browser_platform,
   region,
@@ -205,7 +201,7 @@ group by all
 create or replace table `etsy-data-warehouse-dev.rollups.boe_maus_retention` as (
 with maus as (
   select 
-    date_trunc(v._date, month) as month,
+    month,
     mapped_user_id,
     count(distinct visit_id) as visits,
     sum(total_gms) as gms,
@@ -227,7 +223,6 @@ from maus
   'ty' as era,
   nw.month,
   b.buyer_segment, 
-    nw.mapped_user_id, 
   vi.top_channel,
   vi.browser_platform,
   vi.region,
@@ -249,7 +244,6 @@ union all ----union here
   'ly' as era,
   date_add(nw.month, interval 12 month) as month,
   b.buyer_segment, 
-    nw.mapped_user_id, 
   vi.top_channel,
   vi.browser_platform,
   vi.region,
@@ -271,7 +265,6 @@ group by all
 select
   month,
   buyer_segment, 
-  mapped_user_id, 
   top_channel,
   browser_platform,
   region,
