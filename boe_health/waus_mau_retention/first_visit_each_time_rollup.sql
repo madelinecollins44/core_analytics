@@ -17,8 +17,8 @@ create or replace temp table visits as (
     , v.region
     , v.visit_id
     , v.total_gms
-    , row_number() over (partition by m.mapped_user_id, date_trunc(v._date, week(MONDAY)) order by _date desc) as visit_number_week
-    , row_number() over (partition by m.mapped_user_id, date_trunc(v._date, month) order by _date desc) as visit_number_month
+    , row_number() over (partition by m.mapped_user_id, date_trunc(v._date, week(MONDAY)) order by _date) as visit_number_week
+    , row_number() over (partition by m.mapped_user_id, date_trunc(v._date, month) order by _date) as visit_number_month
   from etsy-data-warehouse-prod.weblog.visits v
   join etsy-data-warehouse-prod.user_mart.mapped_user_profile m using (user_id)
   where 
@@ -106,8 +106,8 @@ with purchase_info as (
     _date,
     date_trunc(_date, week(MONDAY)) as week,
     date_trunc(_date, month) as month,
-    row_number() over (partition by mapped_user_id, date_trunc(_date, week(MONDAY)) order by _date desc) as number_week,
-    row_number() over (partition by mapped_user_id, date_trunc(_date, month) order by _date desc) as number_month,
+    row_number() over (partition by mapped_user_id, date_trunc(_date, week(MONDAY)) order by _date) as number_week,
+    row_number() over (partition by mapped_user_id, date_trunc(_date, month) order by _date) as number_month,
     CASE  
       when p.lifetime_purchase_days = 0 or p.lifetime_purchase_days is null then 'Zero Time'  
       when date_diff(_date, p.first_purchase_date, DAY)<=180 and (p.lifetime_purchase_days=2 or round(cast(round(p.lifetime_gms,20) as numeric),2) >100.00) then 'High Potential' 
