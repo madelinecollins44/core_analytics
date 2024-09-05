@@ -107,6 +107,8 @@ with purchase_info as (
     _date,
     date_trunc(_date, week(MONDAY)) as week,
     date_trunc(_date, month) as month,
+    row_number() over (partition by m.mapped_user_id, date_trunc(v._date, week(MONDAY)) order by _date desc) as number_week,
+    row_number() over (partition by m.mapped_user_id, date_trunc(v._date, month) order by _date desc) as number_month,
     CASE  
       when p.lifetime_purchase_days = 0 or p.lifetime_purchase_days is null then 'Zero Time'  
       when date_diff(_date, p.first_purchase_date, DAY)<=180 and (p.lifetime_purchase_days=2 or round(cast(round(p.lifetime_gms,20) as numeric),2) >100.00) then 'High Potential' 
@@ -120,6 +122,21 @@ with purchase_info as (
   group by all
 ); 
 
+ create or replace temp table buyer_segment_week as (
+select 
+  mapped_user_id, week, buyer_segment 
+from 
+  buyer_segment
+where number_week =1 
+ );
+
+create or replace temp table buyer_segment_month as (
+select 
+  mapped_user_id, month, buyer_segment 
+from 
+  buyer_segment
+where number_month =1 
+ );
 
 create or replace table `etsy-data-warehouse-dev.rollups.boe_waus_retention` as (
 with waus as (
@@ -169,7 +186,6 @@ group by all
   bs.buyer_segment, 
   rw.top_channel,
   rw.browser_platform,
-  u.mapped_user_id,
   rw.region,
   sum(case when era = 'ty' then waus end) AS ty_waus,
   sum(case when era = 'ty' then retained end) AS ty_retained,
@@ -178,7 +194,7 @@ group by all
 from yy_union u
 left join first_of_week rw 
   using (mapped_user_id, week)
-left join buyer_segment bs
+left join buyer_segment_week bs
   on u.mapped_user_id=bs.mapped_user_id
   and u.week=bs.week
 group by all
@@ -232,7 +248,6 @@ group by all
   bs.buyer_segment, 
   rw.top_channel,
   rw.browser_platform,
-  u.mapped_user_id,
   rw.region,
   sum(case when era = 'ty' then maus end) AS ty_maus,
   sum(case when era = 'ty' then retained end) AS ty_retained,
@@ -241,7 +256,7 @@ group by all
 from yy_union u
 left join first_of_month rw 
   using (mapped_user_id, month)
-left join buyer_segment bs
+left join buyer_segment_month bs
   on u.mapped_user_id=bs.mapped_user_id
   and u.month=bs.month
 group by all
