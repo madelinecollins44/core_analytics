@@ -26,7 +26,7 @@ create or replace temp table visits as (
     and _date >= current_date-880 
     and v.user_id is not null ) ;
 
---grabs most recent visit info 
+--grabs most recent visit info from each week/month
 create or replace temp table first_of_week as (
   select 
     mapped_user_id
@@ -53,7 +53,7 @@ where visit_number_month = 1
 group by all 
 );
 
---only need the buyer segment for first visit of each month/ week
+--only need dates that correlate to the first visit in that week/ month 
 create or replace temp table combine_dates as (
  with _dates as (
 select 
@@ -70,7 +70,6 @@ union all
 );
 
 
---get buyer segment from most recent boe visit 
 create or replace temp table buyer_segment as (
 with purchase_info as (
   select
@@ -107,8 +106,8 @@ with purchase_info as (
     _date,
     date_trunc(_date, week(MONDAY)) as week,
     date_trunc(_date, month) as month,
-    row_number() over (partition by m.mapped_user_id, date_trunc(v._date, week(MONDAY)) order by _date desc) as number_week,
-    row_number() over (partition by m.mapped_user_id, date_trunc(v._date, month) order by _date desc) as number_month,
+    row_number() over (partition by mapped_user_id, date_trunc(_date, week(MONDAY)) order by _date desc) as number_week,
+    row_number() over (partition by mapped_user_id, date_trunc(_date, month) order by _date desc) as number_month,
     CASE  
       when p.lifetime_purchase_days = 0 or p.lifetime_purchase_days is null then 'Zero Time'  
       when date_diff(_date, p.first_purchase_date, DAY)<=180 and (p.lifetime_purchase_days=2 or round(cast(round(p.lifetime_gms,20) as numeric),2) >100.00) then 'High Potential' 
@@ -122,6 +121,8 @@ with purchase_info as (
   group by all
 ); 
 
+
+--avoid dupes by taking the first buyer segment from each week/ month 
  create or replace temp table buyer_segment_week as (
 select 
   mapped_user_id, week, buyer_segment 
