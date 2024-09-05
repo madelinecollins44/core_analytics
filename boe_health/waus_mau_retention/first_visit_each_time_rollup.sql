@@ -27,7 +27,7 @@ create or replace temp table visits as (
     and v.user_id is not null ) ;
 
 --grabs most recent visit info 
-create or replace temp table most_recent_week as (
+create or replace temp table first_of_week as (
   select 
     mapped_user_id
     , week
@@ -40,7 +40,7 @@ where visit_number_week = 1
 group by all 
 );
 
-create or replace temp table most_recent_month as (
+create or replace temp table first_of_month as (
   select 
     mapped_user_id
     , month
@@ -59,12 +59,12 @@ create or replace temp table combine_dates as (
 select 
     mapped_user_id
     , _date
-  from most_recent_month
+  from first_of_month
 union all 
   select 
     mapped_user_id
     , _date
-  from most_recent_week
+  from first_of_week
  )
  select distinct _date, mapped_user_id from _dates
 );
@@ -176,7 +176,7 @@ group by all
   sum(case when era = 'ly' then waus end) AS ly_waus,
   sum(case when era = 'ly' then retained end) AS ly_retained,
 from yy_union u
-left join most_recent_week rw 
+left join first_of_week rw 
   using (mapped_user_id, week)
 left join buyer_segment bs
   on u.mapped_user_id=bs.mapped_user_id
@@ -239,7 +239,7 @@ group by all
   sum(case when era = 'ly' then maus end) AS ly_maus,
   sum(case when era = 'ly' then retained end) AS ly_retained,
 from yy_union u
-left join most_recent_month rw 
+left join first_of_month rw 
   using (mapped_user_id, month)
 left join buyer_segment bs
   on u.mapped_user_id=bs.mapped_user_id
