@@ -17,8 +17,8 @@ create or replace temp table visits as (
     , v.region
     , v.visit_id
     , v.total_gms
-    , row_number() over (partition by m.mapped_user_id, date_trunc(v._date, week(MONDAY)) order by _date desc) as visit_number_week
-    , row_number() over (partition by m.mapped_user_id, date_trunc(v._date, month) order by _date desc) as visit_number_month
+    , row_number() over (partition by m.mapped_user_id, date_trunc(v._date, week(MONDAY)) order by _date) as visit_number_week
+    , row_number() over (partition by m.mapped_user_id, date_trunc(v._date, month) order by _date) as visit_number_month
   from etsy-data-warehouse-prod.weblog.visits v
   join etsy-data-warehouse-prod.user_mart.mapped_user_profile m using (user_id)
   where 
@@ -146,11 +146,12 @@ from waus
   'ty' as era,
   nw.week,
   b.buyer_segment, 
+  nw.mapped_user_id, 
   vi.top_channel,
   vi.browser_platform,
   vi.region,
   count(nw.mapped_user_id) as waus, 
-  count(case when nw.next_visit_week = date_add(week, interval 1 week) then nw.mapped_user_id end) as retained,
+  count(case when nw.next_visit_week = date_add(nw.week, interval 1 week) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_week nw 
@@ -167,16 +168,17 @@ union all ----union here
   'ly' as era,
   date_add(nw.week, interval 52 week) as week,
   b.buyer_segment, 
+   nw.mapped_user_id,
   vi.top_channel,
   vi.browser_platform,
   vi.region,
   count(nw.mapped_user_id) as waus, 
-  count(case when nw.next_visit_week = date_add(week, interval 1 week) then nw.mapped_user_id end) as retained,
+  count(case when nw.next_visit_week = date_add(nw.week, interval 1 week) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_week nw 
 left join 
-  most_recent_info vi
+  most_recent_week vi
     using (mapped_user_id, week)
 left join 
   buyer_segment b 
@@ -188,6 +190,7 @@ group by all
 select
   week,
   buyer_segment, 
+  mapped_user_id, 
   top_channel,
   browser_platform,
   region,
@@ -224,16 +227,17 @@ from maus
   'ty' as era,
   nw.month,
   b.buyer_segment, 
+    nw.mapped_user_id, 
   vi.top_channel,
   vi.browser_platform,
   vi.region,
   count(nw.mapped_user_id) as maus, 
-  count(case when nw.next_visit_month = date_add(month, interval 1 month) then nw.mapped_user_id end) as retained,
+  count(case when nw.next_visit_month = date_add(nw.month, interval 1 month) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_month nw 
 left join 
-  most_recent_info vi
+  most_recent_month vi
     using (mapped_user_id, month)
 left join 
   buyer_segment b 
@@ -245,16 +249,17 @@ union all ----union here
   'ly' as era,
   date_add(nw.month, interval 12 month) as month,
   b.buyer_segment, 
+    nw.mapped_user_id, 
   vi.top_channel,
   vi.browser_platform,
   vi.region,
   count(nw.mapped_user_id) as maus, 
-  count(case when nw.next_visit_month = date_add(month, interval 1 month) then nw.mapped_user_id end) as retained,
+  count(case when nw.next_visit_month = date_add(nw.month, interval 1 month) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
 from 
   next_visit_month nw 
 left join 
-  most_recent_info vi
+  most_recent_month vi
     using (mapped_user_id, month)
 left join 
   buyer_segment b 
@@ -266,6 +271,7 @@ group by all
 select
   month,
   buyer_segment, 
+  mapped_user_id, 
   top_channel,
   browser_platform,
   region,
