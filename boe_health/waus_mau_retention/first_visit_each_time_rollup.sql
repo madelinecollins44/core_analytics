@@ -26,7 +26,7 @@ create or replace temp table visits as (
     and _date >= current_date-880 
     and v.user_id is not null ) ;
 
---grabs most recent visit info from each week/month
+--grabs first visit from each week/month
 create or replace temp table first_of_week as (
   select 
     mapped_user_id
@@ -53,7 +53,7 @@ where visit_number_month = 1
 group by all 
 );
 
---only need dates that correlate to the first visit in that week/ month 
+--pull out dates specific to first visit of the week/month to speed up buyer_segment table 
 create or replace temp table combine_dates as (
  with _dates as (
 select 
@@ -69,7 +69,7 @@ union all
  select distinct _date, mapped_user_id from _dates
 );
 
-
+--get buyer_segment of on day of each visit
 create or replace temp table buyer_segment as (
 with purchase_info as (
   select
@@ -173,7 +173,7 @@ union all ----union here
   select
   'ly' as era,
   date_add(nw.week, interval 52 week) as week,
-   nw.mapped_user_id,
+  nw.mapped_user_id,
   count(nw.mapped_user_id) as waus, 
   count(case when nw.next_visit_week = date_add(nw.week, interval 1 week) then nw.mapped_user_id end) as retained,
   sum(gms) as gms
@@ -182,6 +182,7 @@ from
 where date_add(nw.week, interval 52 week) <= current_date-1 
 group by all 
 )
+  -- need to join visit info in last step to avoid dupes between ty + ly bc different visit info 
   select
   u.week,
   bs.buyer_segment, 
@@ -200,6 +201,7 @@ left join buyer_segment_week bs
   and u.week=bs.week
 group by all
 );
+-- could probs just count in the final agg instead of summing
 
 create or replace table `etsy-data-warehouse-dev.rollups.boe_maus_retention` as (
 with maus as (
