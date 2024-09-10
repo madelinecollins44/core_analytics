@@ -24,7 +24,7 @@ with reactivated_boe_visits as (
       when second_channel in ('us_video','intl_video') then 'Video' else 'Other Paid' end
       else 'Other Non-Paid' 
       end as reporting_channel
-  , lag(_date) over (partition by mapped_user_id order by _date asc) as last_visit_date
+    , lag(_date) over(partition by mapped_user_id order by _date) as previous_boe_visit_date
   , date_diff(_date, lag(_date) over (partition by mapped_user_id order by _date asc), day) AS days_between_visits
 from 
   etsy-data-warehouse-prod.weblog.visits 
@@ -34,7 +34,7 @@ left join
 where 
     date_trunc(_date, year) >= '2022-01-01'
     and platform in ('boe')
-qualify date_diff(_date, lag(_date) over (partition by mapped_user_id order by _date asc), day) >= 30)
+qualify date_diff(_date, lag(_date) over (partition by mapped_user_id order by _date), day) >= 30)
 select
   reporting_channel
   , count(distinct case when days_between_visits >= 30 then mapped_user_id end) as total_reactivated_users_after_30_days
