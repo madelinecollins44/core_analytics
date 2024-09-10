@@ -39,15 +39,11 @@ select
   reporting_channel
   , count(distinct mapped_user_id) as total_reactivated_users
   , max(days_between_visits) as max_days_between_visits
-  , count(distinct case when days_between_visits = max(days_between_visits) over (partition by mapped_user_id) then mapped_user_id end) AS users_with_max_days_between_visits  
   , min(days_between_visits) as min_days_between_visits
   , avg(days_between_visits) as avg_days_between_visits
-  -- , (percentile_cont(days_between_visits, 0.5) OVER(partition by top_channel) group by top_channel) as median_days_between_visits
+  , approx_quantiles(days_between_visits, 100)[offset(50)] as median_days_between_visits
 from reactivated_boe_visits
 group by all 
-
-
-
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------------
