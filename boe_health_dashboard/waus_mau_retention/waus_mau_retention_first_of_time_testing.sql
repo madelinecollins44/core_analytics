@@ -1,4 +1,6 @@
-----see if new rollup matches old one 
+------------------------------------------------
+--see if new rollup matches old one 
+------------------------------------------------
 select sum(ty_waus) as waus, sum(ty_retained) as retained, sum(ly_waus) as ly_waus, sum(ly_retained) as ly_retained from etsy-data-warehouse-prod.rollups.boe_waus_retention
 where week in ('2024-06-10')
 -- waus	      retained    	ly_waus	      ly_retained
@@ -9,6 +11,42 @@ where week in ('2024-06-10')
 -- waus	      retained	    ly_waus     	ly_retained
 -- 16212949	    8844638	    16061731	      9177131
 
+--testing waus 
+select 
+  week
+  , sum(ty_waus) as ty_waus
+  , sum(ty_retained) as ty_retained
+  , sum(ly_waus) as ly_waus
+  , sum(ly_retained) as ly_retained
+from etsy-data-warehouse-prod.rollups.boe_waus_retention
+where week in ('2024-01-01') or week in ('2024-04-15')
+group by all
+-------prod-------
+-- week	        ty_waus	        ty_retained	    ly_waus	    ly_retained
+-- 2024-01-01	18681942	    10882227	    17700891	10740126
+-- 2024-04-15	16398089	    9145228	        16626958	9673011
+-------dev-------
+-- week	        ty_waus	        ty_retained	      ly_waus	    ly_retained
+-- 2024-01-01	18681942	    10882227	      17700891	    10740126
+-- 2024-04-15	16398089	    9145228	          16626958	    9673011
+
+
+--testing maus 
+select 
+  month
+  , sum(ty_maus) as ty_maus
+  , sum(ty_retained) as ty_retained
+  , sum(ly_maus) as ly_maus
+  , sum(ly_retained) as ly_retained
+from etsy-data-warehouse-dev.rollups.boe_maus_retention
+where month in ('2024-04-01')
+group by all
+    ----dev
+-- month	        ty_maus           ty_retained	    ly_maus	    ly_retained
+-- 2024-04-01        	33257728        23709553		    null        null
+ ----prod
+--     month	ty_maus	        ty_retained	        ly_maus	        ly_retained
+-- 2024-04-01	33257728	        23709553	        32761129	        23220416
     
 ----testing to see if row counting is correct
 with agg as (select 
