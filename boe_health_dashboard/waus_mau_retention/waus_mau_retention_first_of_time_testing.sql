@@ -42,9 +42,9 @@ from etsy-data-warehouse-dev.rollups.boe_maus_retention
 where month in ('2024-01-01') or month in ('2024-04-01')
 group by all
     ----dev
--- month	        ty_maus	      ty_retained	      ly_maus	ly_retained
--- 2024-01-01	    35575628	      25314507		
--- 2024-04-01	    33257728	      23709553		
+-- month	      ty_maus      	ty_retained	      ly_maus	      ly_retained
+-- 2024-04-01	    33257728	    23709553	      32761129	      23220416
+-- 2024-01-01	    35575628	    25314507	      32920647	      23947126
  ----prod
 -- month	          ty_maus	      ty_retained	      ly_maus	      ly_retained
 -- 2024-01-01	      35575628	      25314507	      32920647	      23947126
