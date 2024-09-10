@@ -39,14 +39,16 @@ select
   , sum(ly_maus) as ly_maus
   , sum(ly_retained) as ly_retained
 from etsy-data-warehouse-dev.rollups.boe_maus_retention
-where month in ('2024-04-01')
+where month in ('2024-01-01') or month in ('2024-04-01')
 group by all
     ----dev
--- month	        ty_maus           ty_retained	    ly_maus	    ly_retained
--- 2024-04-01        	33257728        23709553		    null        null
+-- month	        ty_maus	      ty_retained	      ly_maus	ly_retained
+-- 2024-01-01	    35575628	      25314507		
+-- 2024-04-01	    33257728	      23709553		
  ----prod
---     month	ty_maus	        ty_retained	        ly_maus	        ly_retained
--- 2024-04-01	33257728	        23709553	        32761129	        23220416
+-- month	          ty_maus	      ty_retained	      ly_maus	      ly_retained
+-- 2024-01-01	      35575628	      25314507	      32920647	      23947126
+-- 2024-04-01	      33257728	      23709553	      32761129	      23220416
     
 ----testing to see if row counting is correct
 with agg as (select 
