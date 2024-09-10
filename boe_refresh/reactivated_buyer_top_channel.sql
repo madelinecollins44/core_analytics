@@ -34,10 +34,10 @@ left join
 where 
     date_trunc(_date, year) >= '2022-01-01'
     and platform in ('boe')
-qualify date_diff(_date, lag(_date) over (partition by mapped_user_id order by _date asc), day) >= 364)
+qualify date_diff(_date, lag(_date) over (partition by mapped_user_id order by _date asc), day) >= 30)
 select
   reporting_channel
-  , count(distinct mapped_user_id) as total_reactivated_users
+  , count(distinct case when days_between_visits >= 30 then mapped_user_id end) as total_reactivated_users_after_30_days
   , max(days_between_visits) as max_days_between_visits
   , min(days_between_visits) as min_days_between_visits
   , avg(days_between_visits) as avg_days_between_visits
