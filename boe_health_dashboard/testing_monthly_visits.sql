@@ -74,3 +74,33 @@ group by all
 -- other	2.1204281230219908
 -- internal	3.0353855193354029
 -- push	1.9876127480012802
+
+
+--tesing key markets
+---testing for monthly visits per user
+with agg as (
+select 
+  visit_id
+  -- , _date
+  , coalesce(cast(user_id as string), browser_id) as unique_id
+  , case 
+    when detected_region in ('US') then 'US'
+    when detected_region in ('GB') then 'UK'
+    when detected_region in ('CA') then 'CA'
+    when detected_region in ('DE') then 'DE'
+    else 'other'
+    end as region
+  from etsy-data-warehouse-prod.weblog.visits
+where _date >= current_date-30 and platform in ('boe'))
+select
+  -- date_trunc(_date, month) as month
+   region
+  , count(distinct visit_id)/ count(distinct unique_id) as monthly_visits_per_user
+from agg
+group by all 
+-- region	monthly_visits_per_user
+-- DE	5.2674598332110323
+-- CA	5.6238919992812066
+-- UK	5.4841646039903607
+-- other	2.9357202264580136
+-- US	6.345660926382986
