@@ -45,51 +45,37 @@ select
 from reactivated_boe_visits
 group by all 
 
------QUESTION TO ANSWER: Which channels drive visits from reactivated app users? How long have they been inactive before reactivating?
-with reactivated_boe_visits as (
-  select
-  _date
-  , visit_id
-  , mapped_user_id
-  , case 
-      when top_channel in ('direct') then 'Direct'
-      when top_channel in ('dark') then 'Dark'
-      when top_channel in ('internal') then 'Internal'
-      when top_channel in ('seo') then 'SEO'
-      when top_channel like 'social_%' then 'Non-Paid Social'
-      when top_channel like 'email%' then 'Email'
-      when top_channel like 'push_%' then 'Push'
-      when top_channel in ('us_paid','intl_paid') then
-        case
-          when (second_channel like '%gpla' or second_channel like '%bing_plas') then 'PLA'
-          when (second_channel like '%_ppc' or second_channel like 'admarketplace') then case
-          when third_channel like '%_brand' then 'SEM - Brand' else 'SEM - Non-Brand'
-          end
-      when second_channel='affiliates' then 'Affiliates'
-      when (second_channel like 'facebook_disp%' or second_channel like 'pinterest_disp%') then 'Paid Social'
-      when second_channel like '%native_display' then 'Display'
-      when second_channel in ('us_video','intl_video') then 'Video' else 'Other Paid' end
-      else 'Other Non-Paid' 
-      end as reporting_channel
-    , lag(_date) over(partition by mapped_user_id order by _date) as previous_boe_visit_date
-    , sum(converted) as converted
-  , date_diff(_date, lag(_date) over (partition by mapped_user_id order by _date asc), day) AS days_between_visits
-from 
-  etsy-data-warehouse-prod.weblog.visits 
-left join 
-  etsy-data-warehouse-prod.user_mart.mapped_user_profile 
-    using (user_id)
-where 
-    date_trunc(_date, year) >= '2022-01-01'
-    and platform in ('boe')
-group by all
-qualify date_diff(_date, lag(_date) over (partition by mapped_user_id order by _date), day) >= 30 )
+-----engagement metrics
 select
   reporting_channel
   , count(distinct mapped_user_id) as users
   , sum(converted) as converted
   , count(distinct visit_id) as visits
   , count(distinct case when converted > 0 then mapped_user_id end) as converted_user
+from reactivated_boe_visits
+group by all 
+
+-----QUESTION TO ANSWER: days since visit
+select
+  reporting_channel
+  , case 
+    when days_between_visits = 30 then '1 month'
+    when days_between_visits between 31 and 60 then '2 months'
+    when days_between_visits between 61 and 90 then '3 months'
+    when days_between_visits between 91 and 120 then '4 months'
+    when days_between_visits between 121 and 150 then '5 months'
+    when days_between_visits between 151 and 180 then '6 months'
+    when days_between_visits between 181 and 210 then '7 months'
+    when days_between_visits between 211 and 240 then '8 months'
+    when days_between_visits between 241 and 270 then '9 months'
+    when days_between_visits between 271 and 300 then '10 months'
+    when days_between_visits between 301 and 330 then '11 months'
+    when days_between_visits between 331 and 365 then '1 year'
+    when days_between_visits between 366 and 548 then '1.5 years'
+    when days_between_visits between 549 and 730 then '2 year'
+    else 'more than 2 years'
+    end as days_between_visits    
+  , count(distinct mapped_user_id) as users
 from reactivated_boe_visits
 group by all 
 
