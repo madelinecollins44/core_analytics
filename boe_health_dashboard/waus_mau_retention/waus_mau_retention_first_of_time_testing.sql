@@ -30,7 +30,6 @@ group by all
 -- 2024-01-01	18681942	    10882227	      17700891	    10740126
 -- 2024-04-15	16398089	    9145228	          16626958	    9673011
 
-
 --testing maus 
 select 
   month
@@ -49,6 +48,21 @@ group by all
 -- month	          ty_maus	      ty_retained	      ly_maus	      ly_retained
 -- 2024-01-01	      35575628	      25314507	      32920647	      23947126
 -- 2024-04-01	      33257728	      23709553	      32761129	      23220416
+
+  --making sure buyer segment matches total numbers of waus 
+  with agg as (select 
+  buyer_segment
+  , sum(ty_waus) as waus
+from etsy-data-warehouse-dev.rollups.boe_waus_retention
+where week >= '2024-07-01'
+group by all
+)
+select sum(waus) from agg 
+--180186239
+
+select sum(ty_waus) from etsy-data-warehouse-prod.rollups.boe_waus_retention
+where week >= '2024-07-01'
+--180186239
     
 ----testing to see if row counting is correct
 with agg as (select 
