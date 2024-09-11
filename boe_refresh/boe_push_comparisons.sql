@@ -31,6 +31,18 @@ from etsy-data-warehouse-prod.weblog.visits
 where _date >= current_date-30 and platform in ('boe')
 group by all
 
+select
+  case 
+      when v.top_channel like 'push_%' then v.top_channel
+      else 'Other Traffic' 
+      end as reporting_channel
+  , count(distinct v.visit_id) as visits
+  , count(distinct v.user_id) as users
+from etsy-data-warehouse-prod.weblog.visits v 
+where 
+  _date >= current_date-30 
+  and v.platform in ('boe')
+group by all
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- what does engagement look like by push type, push vs not push (conversion rate, listing views, exit rate, engagement rate, types of engagement, acvv)?
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
