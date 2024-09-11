@@ -54,23 +54,21 @@ select
   , count(distinct v.visit_id) as visits
   , count(distinct v.user_id) as users
   , sum(v.converted) as conversions
+  , count(distinct case when v.converted > 0 then v.visit_id end) as converted_visits
   , sum(v.total_gms) as total_gms
-  , sum(v.total_gms) / count(distinct case when v.converted > 0 then v.visit_id end) as acvv
+  , sum(v.total_gms)/sum(v.converted) as acvv
   , count(distinct case when timestamp_diff(v.end_datetime, v.start_datetime, second)> 300  then v.visit_id end) as visits_5_min
-  , count(distinct case when  v.cart_adds > 0 or v.fav_item_count > 0 or v.fav_shop_count > 0 then v.visit_id end) as collected
+  , count(distinct case when  v.cart_adds > 0 or v.fav_item_count > 0 or v.fav_shop_count > 0 then v.visit_id end) as collected_visits
   , count(distinct case 
       when timestamp_diff(v.end_datetime, v.start_datetime,second)> 300 
       or v.cart_adds>0 or v.fav_item_count > 0 or v.fav_shop_count > 0
       or v.converted > 0
     then v.visit_id end) as engaged_visits
-  , count(lv.listing_id) as viewed_listings
-  , sum(trans.trans_gms_net) as listing_gms
-from etsy-data-warehouse-prod.weblog.visits v 
-left join etsy-data-warehouse-prod.analytics.listing_views lv using (_date, visit_id)
-left join `etsy-data-warehouse-prod`.transaction_mart.transactions_visits tv 
-  on v.visit_id=tv.visit_id
-left join `etsy-data-warehouse-prod`.transaction_mart.transactions_gms_by_trans trans
-  on tv.transaction_id=trans.transaction_id
+  , count(distinct lv.visit_id) as visits_with_listing_view
+from 
+  etsy-data-warehouse-prod.weblog.visits v 
+left join 
+  (select visit_id, count(*) as listing_views from etsy-data-warehouse-prod.analytics.listing_views where _date >= current_date-30 group by all) lv using (visit_id)
 where 
   _date >= current_date-30 
   and v.platform in ('boe')
