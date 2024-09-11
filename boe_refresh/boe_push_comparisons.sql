@@ -34,6 +34,35 @@ group by all
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- what does engagement look like by push type, push vs not push (conversion rate, listing views, exit rate, engagement rate, types of engagement, acvv)?
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+select
+  case 
+      when v.top_channel like 'push_%' then v.top_channel
+      else 'Other Traffic' 
+      end as reporting_channel
+  , count(distinct v.visit_id) as visits
+  , count(distinct v.user_id) as users
+  , sum(v.converted) as conversions
+  , sum(v.total_gms) as total_gms
+  , sum(v.total_gms) / count(distinct case when v.converted > 0 then v.visit_id end) as acvv
+  , count(distinct case when timestamp_diff(v.end_datetime, v.start_datetime, second)> 300  then v.visit_id end) as visits_5_min
+  , count(distinct case when  v.cart_adds > 0 or v.fav_item_count > 0 or v.fav_shop_count > 0 then v.visit_id end) as collected
+  , count(distinct case 
+      when timestamp_diff(v.end_datetime, v.start_datetime,second)> 300 
+      or v.cart_adds>0 or v.fav_item_count > 0 or v.fav_shop_count > 0
+      or v.converted > 0
+    then v.visit_id end) as engaged_visits
+  , count(lv.listing_id) as viewed_listings
+  , sum(trans.trans_gms_net) as listing_gms
+from etsy-data-warehouse-prod.weblog.visits v 
+left join etsy-data-warehouse-prod.analytics.listing_views lv using (_date, visit_id)
+left join `etsy-data-warehouse-prod`.transaction_mart.transactions_visits tv 
+  on v.visit_id=tv.visit_id
+left join `etsy-data-warehouse-prod`.transaction_mart.transactions_gms_by_trans trans
+  on tv.transaction_id=trans.transaction_id
+where 
+  _date >= current_date-30 
+  and v.platform in ('boe')
+group by all
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- reactivated users between push types, push vs not push 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
