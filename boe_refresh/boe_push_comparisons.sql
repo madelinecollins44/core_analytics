@@ -65,6 +65,7 @@ select
       or v.converted > 0
     then v.visit_id end) as engaged_visits
   , count(distinct lv.visit_id) as visits_with_listing_view
+  , sum(lv.listing_views) as listing_views
 from 
   etsy-data-warehouse-prod.weblog.visits v 
 left join 
