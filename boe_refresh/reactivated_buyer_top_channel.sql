@@ -78,8 +78,23 @@ select
   , count(distinct mapped_user_id) as users
 from reactivated_boe_visits
 group by all 
-
-
+  
+--different way of doing day groups
+, date_groups as (
+select
+  days_between_visits
+  , floor((days_between_visits/30)) as monthly_group
+from reactivated_boe_visits
+group by all 
+)
+select 
+  reporting_channel
+  , monthly_group
+  , count(distinct mapped_user_id) as users
+  , count(distinct visit_id) as visits
+from reactivated_boe_visits
+left join date_groups using (days_between_visits)
+group by all 
 ------------------------------------------------------------------------------------------------------------------------------------------------
 --TESTING
 ------------------------------------------------------------------------------------------------------------------------------------------------
