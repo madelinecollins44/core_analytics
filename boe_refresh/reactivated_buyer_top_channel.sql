@@ -1,4 +1,5 @@
 -----QUESTION TO ANSWER: Which channels drive visits from reactivated app users? How long have they been inactive before reactivating?
+-- base table
 with reactivated_boe_visits as (
   select
   _date
@@ -29,12 +30,14 @@ with reactivated_boe_visits as (
 from 
   etsy-data-warehouse-prod.weblog.visits 
 left join 
-  etsy-data-warehouse-prod.user_mart.mapped_user_profile 
+  etsy-data-warehouse-prod.user_mart.user_mapping
     using (user_id)
 where 
     date_trunc(_date, year) >= '2022-01-01'
     and platform in ('boe')
 qualify date_diff(_date, lag(_date) over (partition by mapped_user_id order by _date), day) >= 30)
+
+ -- day metrics  
 select
   reporting_channel
   , count(distinct case when days_between_visits >= 30 then mapped_user_id end) as total_reactivated_users_after_30_days
