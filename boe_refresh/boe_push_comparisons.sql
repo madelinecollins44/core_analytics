@@ -56,6 +56,7 @@ select
   , sum(v.converted) as conversions
   , count(distinct case when v.converted > 0 then v.visit_id end) as converted_visits
   , sum(v.total_gms) as total_gms
+  , sum(v.bounced) as bounces
   , sum(v.total_gms)/sum(v.converted) as acvv
   , count(distinct case when timestamp_diff(v.end_datetime, v.start_datetime, second)> 300  then v.visit_id end) as visits_5_min
   , count(distinct case when  v.cart_adds > 0 or v.fav_item_count > 0 or v.fav_shop_count > 0 then v.visit_id end) as collected_visits
