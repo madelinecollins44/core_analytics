@@ -80,3 +80,27 @@ group by all
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- buyer segments and push engagements 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+begin
+create or replace temp table buyer_segments as (select * from etsy-data-warehouse-prod.rollups.buyer_segmentation_vw where as_of_date >= current_date-30);
+end 
+
+  select
+  case 
+      when top_channel like 'push_%' then top_channel
+      else 'Other Traffic' 
+      end as reporting_channel
+  , bs.buyer_segment 
+  , count(distinct v.visit_id) as visits
+  , count(distinct bs.mapped_user_id) as mapped_users
+from 
+  etsy-data-warehouse-prod.weblog.visits v 
+left join 
+  etsy-data-warehouse-prod.user_mart.user_mapping u
+    using (user_id)
+left join etsy-bigquery-adhoc-prod._script991b1aa9c4ff02ceb1fa465b5cd8effbc4cdb621.buyer_segments bs
+  on u.mapped_user_id=bs.mapped_user_id
+  and v._date=bs.as_of_date
+where 
+  v._date >= current_date-30 
+  and v.platform in ('boe')
+group by all 
