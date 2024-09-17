@@ -51,12 +51,14 @@ select
   visit_id
   , count(*) as listing_views 
   , count(distinct listing_id) as listings_viewed
+  , sum(purchased_after_view) as purchased_after_view
 from 
   etsy-data-warehouse-prod.analytics.listing_views 
 where _date >= current_date-30 
 group by all
 )
 select
+-- general visit metrics 
   case 
       when v.top_channel like 'push_%' then v.top_channel
       else 'Other Traffic' 
@@ -66,10 +68,6 @@ select
   , count(distinct case when pages_seen >= 2 then visit_id end) as visits_with_2_plus_pageviews
   , avg(pages_seen) as avg_pages_seen
   , avg(visit_duration / (1000 * 60)) as avg_visit_duration
-  , count(distinct case when search_info.queries_count >= 2 then visit_id end) as visits_with_2_plus_queries
-  , count(distinct case when search_info.pages_viewed >= 2 then visit_id end) as visits_with_2_plus_search_pages_viewed
-  , avg(search_info.queries_count) as avg_number_of_queries
-  , avg(search_info.pages_viewed) as avg_number_of_search_pages_viewed
   , sum(v.converted) as conversions
   , count(distinct case when v.converted > 0 then v.visit_id end) as converted_visits
   , sum(v.total_gms) as total_gms
@@ -82,9 +80,19 @@ select
       or v.cart_adds>0 or v.fav_item_count > 0 or v.fav_shop_count > 0
       or v.converted > 0
     then v.visit_id end) as engaged_visits
+  --search metrics 
+  , count(distinct case when search_info.queries_count >= 1 then visit_id end) as visits_with_1_plus_queries
+  , count(distinct case when search_info.queries_count >= 2 then visit_id end) as visits_with_2_plus_queries
+  , count(distinct case when search_info.pages_viewed >= 1 then visit_id end) as visits_with_1_plus_search_pages_viewed
+  , count(distinct case when search_info.pages_viewed >= 2 then visit_id end) as visits_with_2_plus_search_pages_viewed
+  , avg(search_info.queries_count) as avg_number_of_queries
+  , avg(case when search_info.queries_count >= 1 then search_info.pages_viewed end) as avg_number_of_search_pages_viewed -- avg pages viewed when there is a search 
+-- listing metrics 
   , count(distinct lv.visit_id) as visits_with_listing_view
   , sum(lv.listing_views) as listing_views
+  , avg(lv.listing_views) as avg_listing_views
   , count(distinct case when lv.listing_views >= 2 then lv.visit_id end) as visits_with_2_plus_listing_views
+  , sum(purchased_after_view) as purchased_after_view
 from 
   etsy-data-warehouse-prod.weblog.visits v 
 left join 
