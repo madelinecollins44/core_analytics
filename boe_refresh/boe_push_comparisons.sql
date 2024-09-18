@@ -52,9 +52,10 @@ select
   , count(*) as listing_views 
   , count(distinct listing_id) as listings_viewed
   , sum(purchased_after_view) as purchased_after_view
-from 
+  
+  from 
   etsy-data-warehouse-prod.analytics.listing_views 
-where _date >= current_date-30 
+where _date >= current_date-30
 group by all
 )
 select
@@ -69,7 +70,6 @@ select
   , avg(pages_seen) as avg_pages_seen
   , avg(visit_duration / (1000 * 60)) as avg_visit_duration
   , sum(v.converted) as conversions
-  , count(distinct case when v.converted > 0 then v.visit_id end) as converted_visits
   , sum(v.total_gms) as total_gms
   , sum(v.bounced) as bounces
   , sum(v.total_gms)/sum(v.converted) as acvv
@@ -86,6 +86,7 @@ select
   , count(distinct case when search_info.pages_viewed >= 1 then visit_id end) as visits_with_1_plus_search_pages_viewed
   , count(distinct case when search_info.pages_viewed >= 2 then visit_id end) as visits_with_2_plus_search_pages_viewed
   , avg(search_info.queries_count) as avg_number_of_queries
+  , avg(case when search_info.queries_count >= 1 then search_info.queries_count end) as avg_number_of_queries_from_visits_with_search
   , avg(case when search_info.queries_count >= 1 then search_info.pages_viewed end) as avg_number_of_search_pages_viewed -- avg pages viewed when there is a search 
 -- listing metrics 
   , count(distinct lv.visit_id) as visits_with_listing_view
