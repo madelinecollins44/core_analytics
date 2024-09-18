@@ -63,12 +63,16 @@ select distinct reporting_channel, approx_median from medians group by all order
 -----engagement metrics
 select
   reporting_channel
-  , count(distinct mapped_user_id) as users
-  , sum(converted) as converted
-  , count(distinct visit_id) as visits
-  , count(distinct case when converted > 0 then mapped_user_id end) as converted_user
-from reactivated_boe_visits
-group by all 
+  , count(distinct case when days_between_visits >= 30 then mapped_user_id end) as total_reactivated_users_after_30_days
+  , count(distinct case when days_between_visits >= 30 then visit_id end) as total_visits_from_reactivated_users_after_30_days
+  , count(distinct visit_id) as total_visits
+  , max(days_between_visits) as max_days_between_visits
+  , min(days_between_visits) as min_days_between_visits
+  , avg(days_between_visits) as avg_days_between_visits
+  , approx_quantiles(days_between_visits, 100)[offset(50)] as median_days_between_visits
+from
+etsy-bigquery-adhoc-prod._script588150b750909492c719faa564cc809f9ad8100d.boe_visits -- temp table w all visits since 1/1/2022
+ group by all 
 
 -----QUESTION TO ANSWER: days since visit
 select
