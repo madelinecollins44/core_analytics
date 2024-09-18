@@ -35,7 +35,8 @@ left join
 where 
     date_trunc(_date, year) >= '2022-01-01'
     and platform in ('boe')
-qualify date_diff(_date, lag(_date) over (partition by mapped_user_id order by _date), day) >= 30)
+--qualify date_diff(_date, lag(_date) over (partition by mapped_user_id order by _date), day) >= 30 -- remove this for all boe users 
+  )
 
  -- day metrics  
 select
@@ -47,6 +48,16 @@ select
   , approx_quantiles(days_between_visits, 100)[offset(50)] as median_days_between_visits
 from reactivated_boe_visits
 group by all 
+
+-- medians 
+with medians as (select
+  reporting_channel,
+  days_between_visits,
+  percentile_cont(days_between_visits, 0.5) over (partition by reporting_channel) as approx_median
+from etsy-bigquery-adhoc-prod._script17836779648db16bb26cbdc4066d92fd64c1153b.boe_visits
+group by all 
+)
+select distinct reporting_channel, approx_median from medians group by all order by 1 desc
 
 -----engagement metrics
 select
