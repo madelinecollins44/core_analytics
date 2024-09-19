@@ -1,6 +1,6 @@
 -----QUESTION TO ANSWER: Which channels drive visits from reactivated app users? How long have they been inactive before reactivating?
 -- base table
-with reactivated_boe_visits as (
+with boe_visits as (
   select
   _date
   , visit_id
