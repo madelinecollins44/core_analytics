@@ -76,6 +76,15 @@ etsy-bigquery-adhoc-prod._script588150b750909492c719faa564cc809f9ad8100d.boe_vis
  group by all 
 
 -----QUESTION TO ANSWER: days since visit
+  select
+  reporting_channel
+  , days_between_visits    
+  , count(distinct mapped_user_id) as users
+  , count(distinct visit_id) as visits
+from etsy-bigquery-adhoc-prod._script5cb00418a3b61ac19432f9b478c0590d8e290671.boe_visits
+group by all
+
+--groups below
 select
   reporting_channel
   , case 
