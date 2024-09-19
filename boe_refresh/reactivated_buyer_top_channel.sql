@@ -114,6 +114,15 @@ select
 from reactivated_boe_visits
 left join date_groups using (days_between_visits)
 group by all 
+
+
+---find share of total traffic vs share of traffic from reactivated users 
+  select reporting_channel, count(distinct visit_id) as visits, count(distinct mapped_user_id) as users 
+  from 
+  --etsy-bigquery-adhoc-prod._script6b45a761fa55bcc614e89e599787433662a5642e.reactivated_boe_visits
+  etsy-bigquery-adhoc-prod._script588150b750909492c719faa564cc809f9ad8100d.boe_visits
+  group by all
+  
 ------------------------------------------------------------------------------------------------------------------------------------------------
 --TESTING
 ------------------------------------------------------------------------------------------------------------------------------------------------
