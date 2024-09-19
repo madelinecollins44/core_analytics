@@ -40,7 +40,12 @@ where
 --qualify date_diff(_date, lag(_date) over (partition by mapped_user_id order by _date), day) >= 30 -- remove this for all boe users 
   )
 
- -- day metrics  
+
+-------- reacvited table: etsy-bigquery-adhoc-prod._script6b45a761fa55bcc614e89e599787433662a5642e.reactivated_boe_visits
+--------  all user table: etsy-bigquery-adhoc-prod._script588150b750909492c719faa564cc809f9ad8100d.boe_visits
+
+  
+  -- day metrics  
 select
   reporting_channel
   , count(distinct case when days_between_visits >= 30 then mapped_user_id end) as total_reactivated_users_after_30_days
@@ -299,3 +304,21 @@ order by _date, start_datetime desc)
 -- boe	direct	31AB0903B8D04D1C9721EA5FBCDC.1725932230620.1	2024-09-10	2024-09-10 01:37:10.000000 UTC
 -- boe	direct	31AB0903B8D04D1C9721EA5FBCDC.1726067200814.1	2024-09-11	2024-09-11 15:06:40.000000 UTC
 -- boe	direct	31AB0903B8D04D1C9721EA5FBCDC.1726324442631.1	2024-09-14	2024-09-14 14:34:02.000000 UTC
+
+
+select 
+_date, visit_id, top_channel, platform, start_datetime
+from 
+  etsy-data-warehouse-prod.weblog.visits 
+left join 
+  etsy-data-warehouse-prod.user_mart.user_mapping
+    using (user_id)
+where mapped_user_id = 51505
+and (_date = ('2023-10-06') or _date =('2023-10-31'))
+-- _date	visit_id	top_channel	platform	start_datetime
+-- 2023-10-31	5FFC4843CA6F4CEF938ED2054CDB.1698785511831.2	direct	boe	2023-10-31 20:51:51.000000 UTC
+-- 2023-10-31	5FFC4843CA6F4CEF938ED2054CDB.1698782289823.1	direct	boe	2023-10-31 19:58:09.000000 UTC
+-- 2023-10-31	5FFC4843CA6F4CEF938ED2054CDB.1698758784593.1	email_transactional	boe	2023-10-31 13:26:24.000000 UTC
+-- 2023-10-06	5FFC4843CA6F4CEF938ED2054CDB.1696604087459.1	direct	boe	2023-10-06 14:54:47.000000 UTC
+-- 2023-10-06	5FFC4843CA6F4CEF938ED2054CDB.1696551942048.1	direct	boe	2023-10-06 00:25:42.000000 UTC
+-- 2023-10-06	5FFC4843CA6F4CEF938ED2054CDB.1696606201917.2	internal	boe	2023-10-06 15:30:01.000000 UTC
