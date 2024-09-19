@@ -26,7 +26,8 @@ with reactivated_boe_visits as (
       else 'Other Non-Paid' 
       end as reporting_channel
     , lag(_date) over(partition by mapped_user_id order by _date) as previous_boe_visit_date
-  , date_diff(_date, lag(_date) over (partition by mapped_user_id order by _date asc), day) AS days_between_visits
+    , lag(start_datetime) over(partition by mapped_user_id order by start_datetime) as previous_boe_visit_start_datetime
+    , date_diff(_date, lag(_date) over (partition by mapped_user_id order by _date asc), day) AS days_between_visits
 from 
   etsy-data-warehouse-prod.weblog.visits 
 left join 
