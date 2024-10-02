@@ -28,11 +28,11 @@ where
 --------------------------------------------------------------------------------------------------------
 --breakdown actions in first visit
 --------------------------------------------------------------------------------------------------------
-CREATE OR REPLACE TABLE `etsy-data-warehouse-dev.apallotto.boe_first_visit_actions` AS (
+CREATE OR REPLACE TABLE `etsy-data-warehouse-dev.madelinecollins.boe_first_visit_actions` AS (
 with first_visits as (
 select
   * 
-from `etsy-data-warehouse-dev.apallotto.boe_first_visits` 
+from `etsy-data-warehouse-dev.madelinecollins.boe_first_visits` 
 where 
   visit_rnk =1
   and _date between current_date -30 and current_date-1
@@ -40,15 +40,20 @@ where
 , events as (
 select
   visit_id
-  , max(case when event_type = "homescreen"  then 1 else 0 end) as homescreen
-  , max(case when event_type in ("app_deals","deals_tab_delivered") then 1 else 0 end) as deals
-  , max(case when event_type = "gift_mode_home" then 1 else 0 end) as gift_mode
-  , max(case when event_type in ("you_tab_viewed","you_screen") then 1 else 0 end) as you
-  , max(case when event_type IN ("favorites","favorites_and_lists","profile_favorite_listings_tab") then 1 else 0 end) as favorites_view
-  , max(case when event_type = "cart_view" then 1 else 0 end) as cart
-  , max(case when event_type = "cart_view" then 1 else 0 end) as listing_view
-
-  , max(case when event_type = 'discover_theme_viewed' then 1 else 0 end) as discover_theme_viewed
+  --tab engagement
+  , max(case when event_type in ('homescreen') then 1 else 0 end) as saw_home
+  , max(case when event_type in ('deals_tab_delivered','app_deals') then 1 else 0 end) as saw_deals
+  , max(case when event_type in ('gift_mode_home') then 1 else 0 end) as saw_gift_mode_home
+  , max(case when event_type in ('favorites_and_lists','view_favorites_landing_complementary') then 1 else 0 end) as saw_favorites_tab -- includes favorites event from experiment
+  , max(case when event_type in ('cart_view') then 1 else 0 end) as saw_cart_view
+  , max(case when event_type in ('browselistings') then 1 else 0 end) as saw_browselistings -- search 
+  , max(case when event_type in ('view_listing') then 1 else 0 end) as saw_view_listings 
+  , max(case when event_type in ('shop_home') then 1 else 0 end) as saw_shop_home  
+  , max(case when event_type in ('add_to_cart') then 1 else 0 end) as saw_add_to_cart
+  , max(case when event_type in ('checkout_start') then 1 else 0 end) as saw_checkout_start
+  , max(case when event_type in ('you_tab_viewed','you_screen','you') then 1 else 0 end) as saw_profile -- added in 'you' b
+--onboarding events 
+  , max(case when event_type = "sign_in_screen" then 1 else 0 end) as sign_in_screen --primary event
   , max(case when event_type = 'login_view' then 1 else 0 end) as login_view
   , max(case when event_type = "sign_in_screen" then 1 else 0 end) as sign_in_screen
   , max(case when event_type = "third_party_signin" then 1 else 0 end) as social_sign_in
@@ -103,4 +108,3 @@ left join events e
 left join `etsy-data-warehouse-prod.user_mart.mapped_user_profile` m
   on f.user_id = m.mapped_user_id
 );
-
