@@ -108,7 +108,7 @@ left join `etsy-data-warehouse-prod.weblog.events` e
 )
 SELECT
     new_visitor,
-    -- event_name,
+    event_name,
     CASE 
       WHEN event_name IN (
         'sign_in_screen',
@@ -168,6 +168,7 @@ FROM
 group by all 
 ORDER BY screen
 -- );
+
 
 --------------------------------------------------------------------------------------------------------
 --breakdown engagements in first visit
