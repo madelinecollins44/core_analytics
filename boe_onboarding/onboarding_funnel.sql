@@ -29,96 +29,39 @@ where
 --------------------------------------------------------------------------------------------------------
 --onboarding event funnel
 --------------------------------------------------------------------------------------------------------
-
+create or replace table etsy-data-warehouse-dev.madelinecollins.boe_onboarding_funnel_events as (
 with first_browser_visits as (
   select 
     browser_id, 
     event_source, 
     new_visitor,
-      isit_id 
+    visit_id 
 from etsy-data-warehouse-dev.madelinecollins.boe_first_visits 
   where visit_rnk = 1 
 )
-, event_counts as (
-  SELECT
+ , event_counts as (
+  select
     e.event_type as event_name,
     v.visit_id,
     v.browser_id,
     v.event_source,
     v.new_visitor
-  FROM `etsy-data-warehouse-prod.weblog.events` e
-  JOIN first_browser_visits v 
+from first_browser_visits v 
+ inner join `etsy-data-warehouse-prod.weblog.events` e
       using (visit_id)
-  WHERE event_type in (
-    --log in spalsh screen 
-    'sign_in_screen',
-    'continue_as_guest_tapped',
-    'login_view',
-    'BOE_social_sign_in_tapped',
-    'BOE_etsy_sign_in_tapped',
-
-    --Registration Web View
-    'join_submit',
-    'BOE_email_sign_in_webview_cancelled',
-
-
-    --Sign In Web View
-    'signin_submit',
-    'magic_link_click',
-    'magic_link_send',
-    'magic_link_redeemed',
-    'magic_link_error',
-    'forgot_password',
-    'forgot_password_view',
-    'forgot_password_email_sent',
-    'reset_password',
-    'keep_me_signed_in_checked',
-    'keep_me_signed_in_unchecked',
-    'BOE_email_sign_in_webview_cancelled',
-
-    --Sign In from Homescreen
-    'login_view',
-    'BOE_social_sign_in_tapped',
-
-    --Notifications Opt In pt 1
-    'notification_registration_interstitial_enable_tapped',
-    'notification_registration_interstitial_dismiss_tapped',
-    'update_setting',
-    'notification_registration_interstitial_viewed',
-
-    --Notifications Opt In pt 2
-    'push_prompt_permission_granted',
-    'push_prompt_permission_denied',
-    'app_tracking_transparency_system_prompt_denied_tapped',
-    'app_tracking_transparency_system_prompt_authorized_tapped',
-
-    --Favorites Quiz
-    'onboarding_favorites-q4-2019_viewed',
-    'onboarding_faves_tapped_skip',
-    'favorites_onboarding_done_button_tapped',
-
-    'homescreen',
-    'boe_homescreen_tab_delivered',
-    'recommendations_module_seen'
-  )
-  GROUP BY event_type
-)
-
-SELECT
-  event_counts.event_name,
-  CASE 
-    WHEN event_counts.event_name IN (
+  where event_type in (
+      --log in spalsh screen 
       'sign_in_screen',
       'continue_as_guest_tapped',
       'login_view',
       'BOE_social_sign_in_tapped',
-      'BOE_etsy_sign_in_tapped'
-    ) THEN '1 - Log In Splash Screen'
-    WHEN event_counts.event_name IN (
+      'BOE_etsy_sign_in_tapped',
+
+      --Registration Web View
       'join_submit',
-      'BOE_email_sign_in_webview_cancelled'
-    ) THEN '2 - Registration Web View'
-    WHEN event_counts.event_name IN (
+      'BOE_email_sign_in_webview_cancelled',
+
+      --Sign In Web View
       'signin_submit',
       'magic_link_click',
       'magic_link_send',
@@ -130,45 +73,100 @@ SELECT
       'reset_password',
       'keep_me_signed_in_checked',
       'keep_me_signed_in_unchecked',
-      'BOE_email_sign_in_webview_cancelled'
-    ) THEN '3 - Sign In Web View'
-    WHEN event_counts.event_name IN (
+      'BOE_email_sign_in_webview_cancelled',
+
+      --Sign In from Homescreen
       'login_view',
-      'BOE_social_sign_in_tapped'
-    ) THEN '4 - Sign In from Homescreen'
-    WHEN event_counts.event_name IN (
+      'BOE_social_sign_in_tapped',
+
+      --Notifications Opt In pt 1
       'notification_registration_interstitial_enable_tapped',
       'notification_registration_interstitial_dismiss_tapped',
       'update_setting',
-      'notification_registration_interstitial_viewed'
-    ) THEN '5 - Notifications Opt In pt 1'
-    WHEN event_counts.event_name IN (
+      'notification_registration_interstitial_viewed',
+
+      --Notifications Opt In pt 2
       'push_prompt_permission_granted',
       'push_prompt_permission_denied',
       'app_tracking_transparency_system_prompt_denied_tapped',
-      'app_tracking_transparency_system_prompt_authorized_tapped'
-    ) THEN '6 - Notifications Opt In pt 2'
-    WHEN event_counts.event_name IN (
+      'app_tracking_transparency_system_prompt_authorized_tapped',
+      'scrolled_past_onboarding_favorites-q4-2019',
+
+      --Favorites Quiz
       'onboarding_favorites-q4-2019_viewed',
       'onboarding_faves_tapped_skip',
-      'favorites_onboarding_done_button_tapped'
-    ) THEN '7 - Favorites Quiz'
-    WHEN event_counts.event_name IN (
+      'favorites_onboarding_done_button_tapped',
+
+      --homescreen/ initial content
       'homescreen',
       'boe_homescreen_tab_delivered',
       'recommendations_module_seen'
-    ) THEN '8 - Initial Content'
-    ELSE NULL END as screen,
-  event_counts.total_events,
-  event_counts.distinct_browsers,
-  (event_counts.distinct_browsers/totals.distinct_browsers)*100 as pct_of_browsers,
-  event_counts.total_events/totals.distinct_browsers as mean,
-  event_counts.mean as mean_of_users_with_event
-FROM totals,event_counts
+    )
+  group by all 
+)
+SELECT
+  event_source,
+    new_visitor,
+    event_name,
+    CASE 
+      WHEN event_name IN (
+        'sign_in_screen',
+        'continue_as_guest_tapped',
+        'login_view',
+        'BOE_social_sign_in_tapped',
+        'BOE_etsy_sign_in_tapped'
+      ) THEN '1 - Log In Splash Screen'
+      WHEN event_name IN (
+        'join_submit',
+        'BOE_email_sign_in_webview_cancelled'
+      ) THEN '2 - Registration Web View'
+      WHEN event_name IN (
+        'signin_submit',
+        'magic_link_click',
+        'magic_link_send',
+        'magic_link_redeemed',
+        'magic_link_error',
+        'forgot_password',
+        'forgot_password_view',
+        'forgot_password_email_sent',
+        'reset_password',
+        'keep_me_signed_in_checked',
+        'keep_me_signed_in_unchecked',
+        'BOE_email_sign_in_webview_cancelled'
+      ) THEN '3 - Sign In Web View'
+      WHEN event_name IN (
+        'login_view',
+        'BOE_social_sign_in_tapped'
+      ) THEN '4 - Sign In from Homescreen'
+      WHEN event_name IN (
+        'notification_registration_interstitial_enable_tapped',
+        'notification_registration_interstitial_dismiss_tapped',
+        'update_setting',
+        'notification_registration_interstitial_viewed'
+      ) THEN '5 - Notifications Opt In pt 1'
+      WHEN event_name IN (
+        'push_prompt_permission_granted',
+        'push_prompt_permission_denied',
+        'app_tracking_transparency_system_prompt_denied_tapped',
+        'app_tracking_transparency_system_prompt_authorized_tapped'
+      ) THEN '6 - Notifications Opt In pt 2'
+      WHEN event_name IN (
+        'onboarding_favorites-q4-2019_viewed',
+        'onboarding_faves_tapped_skip',
+        'favorites_onboarding_done_button_tapped'
+      ) THEN '7 - Favorites Quiz'
+      WHEN event_name IN (
+        'homescreen',
+        'boe_homescreen_tab_delivered',
+        'recommendations_module_seen'
+      ) THEN '8 - Initial Content'
+      ELSE NULL END as screen,
+    count(distinct browser_id) as browsers
+FROM 
+  event_counts
+group by all 
 ORDER BY screen
-
-
-
+);
 
 --------------------------------------------------------------------------------------------------------
 --breakdown engagements in first visit
