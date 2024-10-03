@@ -25,6 +25,7 @@ from `etsy-data-warehouse-prod.weblog.visits`
 where
     extract(year from _date) >= 2017
     and platform = 'boe'
+    and pages_seen > 1 -- filters out visits that didnt see a primary page, ensures more purposeful visits  
 );
 
 --------------------------------------------------------------------------------------------------------
