@@ -29,6 +29,32 @@ where
 );
 
 --------------------------------------------------------------------------------------------------------
+--first primary page viewed for new browsers
+--------------------------------------------------------------------------------------------------------
+with first_browser_visits as (
+  select 
+    browser_id, 
+    new_visitor,
+    visit_id 
+from etsy-data-warehouse-dev.madelinecollins.boe_first_visits 
+  where visit_rnk = 1 
+  and _date >= current_date-30
+  and event_source in ('ios')
+)
+, pages as (
+select 
+  event_type,
+  visit_id,
+ sequence_number
+from first_browser_visits 
+inner join  `etsy-data-warehouse-prod.weblog.events` using (visit_id)
+where page_view =1 
+group by all 
+qualify row_number() over (partition by visit_id order by sequence_number asc) =1 
+)
+select event_type, count(distinct browser_id), count(distinct visit_id) from pages group by all 
+
+--------------------------------------------------------------------------------------------------------
 --onboarding event funnel
 --------------------------------------------------------------------------------------------------------
 with first_browser_visits as (
