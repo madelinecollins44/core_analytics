@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------------------------------
 --get first visit info from each browser, and when the next three visits were 
 ------when looking at each browsers first visit, need to filter to visit_rnk = 1 to look at first visit
+------will also need to look at first visits that happened in the last 30 days bc event data
 --------------------------------------------------------------------------------------------------------
 CREATE OR REPLACE TABLE `etsy-data-warehouse-dev.madelinecollins.boe_first_visits` AS (
 select
