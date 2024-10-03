@@ -29,7 +29,8 @@ where
 --------------------------------------------------------------------------------------------------------
 --onboarding event funnel
 --------------------------------------------------------------------------------------------------------
-create or replace table etsy-data-warehouse-dev.madelinecollins.boe_onboarding_funnel_events as (
+-- create or replace table etsy-data-warehouse-dev.madelinecollins.boe_onboarding_funnel_events as (
+--browsers that have had first visit in last 30 days (bc limits on event data)
 with first_browser_visits as (
   select 
     browser_id, 
@@ -38,7 +39,9 @@ with first_browser_visits as (
     visit_id 
 from etsy-data-warehouse-dev.madelinecollins.boe_first_visits 
   where visit_rnk = 1 
+  and _date >= current_date-30
 )
+--of those browsers, how many completed each onboarding event 
  , event_counts as (
   select
     e.event_type as event_name,
@@ -47,7 +50,7 @@ from etsy-data-warehouse-dev.madelinecollins.boe_first_visits
     v.event_source,
     v.new_visitor
 from first_browser_visits v 
- inner join `etsy-data-warehouse-prod.weblog.events` e
+left join `etsy-data-warehouse-prod.weblog.events` e
       using (visit_id)
   where event_type in (
       --log in spalsh screen 
@@ -107,7 +110,7 @@ from first_browser_visits v
 SELECT
   event_source,
     new_visitor,
-    event_name,
+    -- event_name,
     CASE 
       WHEN event_name IN (
         'sign_in_screen',
@@ -166,7 +169,7 @@ FROM
   event_counts
 group by all 
 ORDER BY screen
-);
+-- );
 
 --------------------------------------------------------------------------------------------------------
 --breakdown engagements in first visit
