@@ -29,6 +29,67 @@ where
 );
 
 --------------------------------------------------------------------------------------------------------
+--create table to pull events from beacons table, need this for home_complementary events
+--------------------------------------------------------------------------------------------------------
+ create or replace table etsy-data-warehouse-dev.madelinecollins.app_onboarding_events as (
+ select
+    beacon.event_name  as event_name,
+    (select value from unnest(beacon.properties.key_value) where key = "first_view") as first_view,
+    visit_id
+  from etsy-visit-pipe-prod.canonical.visit_id_beacons 
+  where date(_partitiontime) >= current_date-30
+      and (beacon.event_name in (
+      --log in spalsh screen 
+      'sign_in_screen',
+      'continue_as_guest_tapped',
+      'login_view',
+      'BOE_social_sign_in_tapped',
+      'BOE_etsy_sign_in_tapped',
+      --Registration Web View
+      'join_submit',
+      'BOE_email_sign_in_webview_cancelled',
+      --Sign In Web View
+      'signin_submit',
+      'magic_link_click',
+      'magic_link_send',
+      'magic_link_redeemed',
+      'magic_link_error',
+      'forgot_password',
+      'forgot_password_view',
+      'forgot_password_email_sent',
+      'reset_password',
+      'keep_me_signed_in_checked',
+      'keep_me_signed_in_unchecked',
+      'BOE_email_sign_in_webview_cancelled',
+      --Sign In from Homescreen
+      'login_view',
+      'BOE_social_sign_in_tapped',
+      --Notifications Opt In pt 1
+      'notification_registration_interstitial_enable_tapped',
+      'notification_registration_interstitial_dismiss_tapped',
+      'update_setting',
+      'notification_registration_interstitial_viewed',
+      --Notifications Opt In pt 2
+      'push_prompt_permission_granted',
+      'push_prompt_permission_denied',
+      'app_tracking_transparency_system_prompt_denied_tapped',
+      'app_tracking_transparency_system_prompt_authorized_tapped',
+      'scrolled_past_onboarding_favorites-q4-2019',
+      --Favorites Quiz
+      'onboarding_favorites-q4-2019_viewed',
+      'onboarding_faves_tapped_skip',
+      'favorites_onboarding_done_button_tapped',
+      --homescreen/ initial content
+      'homescreen',
+      'boe_homescreen_tab_delivered',
+      'recommendations_module_seen')
+    or 
+    -- this is for homescreen post sign in page 
+     (beacon.event_name = "homescreen_complementary"
+  and (select value from unnest(beacon.properties.key_value) where key = "first_view") in ("true")))
+  group by all 
+);
+--------------------------------------------------------------------------------------------------------
 --first primary page viewed for new browsers
 --------------------------------------------------------------------------------------------------------
 with first_browser_visits as (
