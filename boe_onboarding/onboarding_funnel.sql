@@ -31,11 +31,12 @@ where
 --------------------------------------------------------------------------------------------------------
 --create table to pull events from beacons table, need this for home_complementary events
 --------------------------------------------------------------------------------------------------------
- create or replace table etsy-data-warehouse-dev.madelinecollins.app_onboarding_events as (
+  create or replace table etsy-data-warehouse-dev.madelinecollins.app_onboarding_events as (
  select
     beacon.event_name  as event_name,
     (select value from unnest(beacon.properties.key_value) where key = "first_view") as first_view,
-    visit_id
+    visit_id,
+    sequence_number
   from etsy-visit-pipe-prod.canonical.visit_id_beacons 
   where date(_partitiontime) >= current_date-30
       and (beacon.event_name in (
