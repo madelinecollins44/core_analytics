@@ -1,3 +1,5 @@
+--this query looks at which log in event successfully got a user to the next register or sign in page 
+--browsers might be duped if they have multiple attempts at signing in 
 with all_login_events as (
   select 
   a.browser_id,
