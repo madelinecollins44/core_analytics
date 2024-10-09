@@ -3,6 +3,7 @@ with all_login_events as (
   a.browser_id,
   b.visit_id,
   b.event_name,
+  lead(event_name) over (partition by browser_id order by sequence_number) as next_event,
   CASE 
       WHEN event_name  IN (
         'join_submit',
@@ -61,6 +62,28 @@ select
   browser_id
   , visit_id
   , event_name
-  , lead(screen) over (partition by browser_id order by sequence_number)
-from all_login_events
-where event_name in ('continue_as_guest_tapped','BOE_social_sign_in_tapped','BOE_etsy_sign_in_tapped')
+  , next_event
+  , case when next_event in (
+      'join_submit',
+      'BOE_email_sign_in_webview_cancelled',
+      'signin_submit',
+      'magic_link_click',
+      'magic_link_send',
+      'magic_link_redeemed',
+      'magic_link_error',
+      'forgot_password',
+      'forgot_password_view',
+      'forgot_password_email_sent',
+      'reset_password',
+      'keep_me_signed_in_checked',
+      'keep_me_signed_in_unchecked',
+      'BOE_email_sign_in_webview_cancelled',
+      'login_view',
+      'BOE_social_sign_in_tapped'
+    ) then 1 
+    else 0 end as successful_click
+FROM all_login_events
+WHERE event_name IN (
+  'continue_as_guest_tapped',
+  'BOE_social_sign_in_tapped',
+  'BOE_etsy_sign_in_tapped')
