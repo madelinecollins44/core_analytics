@@ -1,0 +1,66 @@
+with all_login_events as (
+  select 
+  a.browser_id,
+  b.visit_id,
+  b.event_name,
+  CASE 
+      WHEN event_name  IN (
+        'join_submit',
+        'BOE_email_sign_in_webview_cancelled'
+      ) THEN '2 - Registration Web View'
+      WHEN event_name  IN (
+        'signin_submit',
+        'magic_link_click',
+        'magic_link_send',
+        'magic_link_redeemed',
+        'magic_link_error',
+        'forgot_password',
+        'forgot_password_view',
+        'forgot_password_email_sent',
+        'reset_password',
+        'keep_me_signed_in_checked',
+        'keep_me_signed_in_unchecked',
+        'BOE_email_sign_in_webview_cancelled',
+        'login_view',
+        'BOE_social_sign_in_tapped'
+      ) THEN '3 - Sign In Web View or Sign In from Homescreen'
+      WHEN event_name  IN (
+        'login_view',
+        'BOE_social_sign_in_tapped'
+      ) THEN '4 - Sign In from Homescreen'
+      ELSE NULL END as screen,
+  b.sequence_number
+from etsy-data-warehouse-dev.madelinecollins.boe_first_visits a
+inner join etsy-data-warehouse-dev.madelinecollins.app_onboarding_events b using (visit_id)
+where event_name in (
+--Registration Web View
+      'join_submit',
+      'BOE_email_sign_in_webview_cancelled',
+      --Sign In Web View
+      'signin_submit',
+      'magic_link_click',
+      'magic_link_send',
+      'magic_link_redeemed',
+      'magic_link_error',
+      'forgot_password',
+      'forgot_password_view',
+      'forgot_password_email_sent',
+      'reset_password',
+      'keep_me_signed_in_checked',
+      'keep_me_signed_in_unchecked',
+      'BOE_email_sign_in_webview_cancelled',
+      --Sign in Homescreen
+      'login_view',
+      'BOE_social_sign_in_tapped',
+    --log in events 
+    'continue_as_guest_tapped',
+    'BOE_social_sign_in_tapped',
+    'BOE_etsy_sign_in_tapped'
+))
+select
+  browser_id
+  , visit_id
+  , event_name
+  , lead(screen) over (partition by browser_id order by sequence_number)
+from all_login_events
+where event_name in ('continue_as_guest_tapped','BOE_social_sign_in_tapped','BOE_etsy_sign_in_tapped')
