@@ -6,6 +6,7 @@ with all_login_events as (
   a.browser_id,
   b.visit_id,
   b.event_name,
+  a.new_visitor,
   lead(event_name) over (partition by browser_id order by sequence_number) as next_event,
   b.sequence_number
 from etsy-data-warehouse-dev.madelinecollins.boe_first_visits a
@@ -40,6 +41,7 @@ select
   browser_id
   , visit_id
   , event_name
+  , new_visitor
   ,  CASE 
       WHEN next_event  IN (
         'join_submit',
@@ -81,8 +83,6 @@ select
       'keep_me_signed_in_checked',
       'keep_me_signed_in_unchecked',
       'BOE_email_sign_in_webview_cancelled'
-      -- 'login_view',
-      -- 'BOE_social_sign_in_tapped'
     ) then 1 
     else 0 end as successful_click
 FROM all_login_events
@@ -93,12 +93,9 @@ WHERE event_name IN (
 )
 select
   event_name, 
+  new_visitor,
   next_screen,
-  browser_id
+  count(distinct browser_id) as browsers
 from great_success
 where successful_click=1
-and event_name in ('continue_as_guest_tapped')
 group by all 
--- --166F05A80F0D4BC9848A335207D7
--- --16A5F2F89B434FA09AFE7A6BD932
--- --21A55F7CA5014A8DA870111499B3
