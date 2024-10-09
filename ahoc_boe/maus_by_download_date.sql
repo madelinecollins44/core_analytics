@@ -34,27 +34,26 @@ create or replace table etsy-data-warehouse-dev.madelinecollins.boe_users_base a
     left join etsy-data-warehouse-dev.madelinecollins.boe_downloads using (mapped_user_id)
 );
 
-
-create or replace table etsy-data-warehouse-dev.madelinecollins.maus_first_visit_date as (
-with maus as (
+  create or replace table etsy-data-warehouse-dev.madelinecollins.maus_first_visit_date as (
+  with mau_users as (
+    select 
+      date_trunc(_date, month) as month, 
+      a.mapped_user_id,
+      a.first_boe_visit
+    from etsy-data-warehouse-dev.madelinecollins.boe_users_base a
+    -- left join etsy-data-warehouse-dev.madelinecollins.maus_dates b
+    --   on b._date between a._date and a._date + 29
+    -- where b._date between current_date - (365*2+30) and current_date
+    group by all
+  )
   select 
-    _date,
-    first_boe_visit,
-    count(distinct mapped_user_id) as mau
-  from etsy-data-warehouse-dev.madelinecollins.boe_users_base 
+    month, 
+    date_trunc(first_boe_visit, month) as download_month, 
+    date_trunc(first_boe_visit, year) as download_year, 
+  count(distinct mapped_user_id) as mau
+  from mau_users
   group by all
-)
-select  
-  date_trunc(_date, month) as month,
-  date_trunc(first_boe_visit, month) as first_boe_visit,
-  extract(month from first_boe_visit) as first_boe_visit_month,
-  extract(year from first_boe_visit) as first_boe_visit_year,
-  sum(mau) as mau,
-from
-  maus
-group by all
 );
-
 ------------------------------------------
 --TESTING
 ------------------------------------------
