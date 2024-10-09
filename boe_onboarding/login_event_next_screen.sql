@@ -1,37 +1,12 @@
 --this query looks at which log in event successfully got a user to the next register or sign in page 
 --browsers might be duped if they have multiple attempts at signing in 
+--also, homescreen is not included at the moment due to duped events 
 with all_login_events as (
   select 
   a.browser_id,
   b.visit_id,
   b.event_name,
   lead(event_name) over (partition by browser_id order by sequence_number) as next_event,
-  CASE 
-      WHEN event_name  IN (
-        'join_submit',
-        'BOE_email_sign_in_webview_cancelled'
-      ) THEN '2 - Registration Web View'
-      WHEN event_name  IN (
-        'signin_submit',
-        'magic_link_click',
-        'magic_link_send',
-        'magic_link_redeemed',
-        'magic_link_error',
-        'forgot_password',
-        'forgot_password_view',
-        'forgot_password_email_sent',
-        'reset_password',
-        'keep_me_signed_in_checked',
-        'keep_me_signed_in_unchecked',
-        'BOE_email_sign_in_webview_cancelled',
-        'login_view',
-        'BOE_social_sign_in_tapped'
-      ) THEN '3 - Sign In Web View or Sign In from Homescreen'
-      WHEN event_name  IN (
-        'login_view',
-        'BOE_social_sign_in_tapped'
-      ) THEN '4 - Sign In from Homescreen'
-      ELSE NULL END as screen,
   b.sequence_number
 from etsy-data-warehouse-dev.madelinecollins.boe_first_visits a
 inner join etsy-data-warehouse-dev.madelinecollins.app_onboarding_events b using (visit_id)
@@ -53,8 +28,8 @@ where event_name in (
       'keep_me_signed_in_unchecked',
       'BOE_email_sign_in_webview_cancelled',
       --Sign in Homescreen
-      'login_view',
-      'BOE_social_sign_in_tapped',
+      -- 'login_view',
+      -- 'BOE_social_sign_in_tapped',
     --log in events 
     'continue_as_guest_tapped',
     'BOE_social_sign_in_tapped',
@@ -65,7 +40,32 @@ select
   browser_id
   , visit_id
   , event_name
-  , next_event
+  ,  CASE 
+      WHEN next_event  IN (
+        'join_submit',
+        'BOE_email_sign_in_webview_cancelled'
+      ) THEN '2 - Registration Web View'
+      WHEN next_event  IN (
+        'signin_submit',
+        'magic_link_click',
+        'magic_link_send',
+        'magic_link_redeemed',
+        'magic_link_error',
+        'forgot_password',
+        'forgot_password_view',
+        'forgot_password_email_sent',
+        'reset_password',
+        'keep_me_signed_in_checked',
+        'keep_me_signed_in_unchecked',
+        'BOE_email_sign_in_webview_cancelled',
+        'login_view',
+        'BOE_social_sign_in_tapped'
+      ) THEN '3 - Sign In Web View or Sign In from Homescreen'
+      -- WHEN next_event  IN (
+      --   'login_view',
+      --   'BOE_social_sign_in_tapped'
+      -- ) THEN '4 - Sign In from Homescreen'
+      ELSE NULL END as next_screen
   , case when next_event in (
       'join_submit',
       'BOE_email_sign_in_webview_cancelled',
@@ -80,9 +80,9 @@ select
       'reset_password',
       'keep_me_signed_in_checked',
       'keep_me_signed_in_unchecked',
-      'BOE_email_sign_in_webview_cancelled',
-      'login_view',
-      'BOE_social_sign_in_tapped'
+      'BOE_email_sign_in_webview_cancelled'
+      -- 'login_view',
+      -- 'BOE_social_sign_in_tapped'
     ) then 1 
     else 0 end as successful_click
 FROM all_login_events
@@ -93,7 +93,12 @@ WHERE event_name IN (
 )
 select
   event_name, 
-  count(distinct browser_id)
+  next_screen,
+  browser_id
 from great_success
 where successful_click=1
+and event_name in ('continue_as_guest_tapped')
 group by all 
+-- --166F05A80F0D4BC9848A335207D7
+-- --16A5F2F89B434FA09AFE7A6BD932
+-- --21A55F7CA5014A8DA870111499B3
