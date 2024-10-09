@@ -46,6 +46,7 @@ with maus as (
 )
 select  
   date_trunc(_date, month) as month,
+  date_trunc(first_boe_visit, month) as first_boe_visit,
   extract(month from first_boe_visit) as first_boe_visit_month,
   extract(year from first_boe_visit) as first_boe_visit_year,
   sum(mau) as mau,
