@@ -60,6 +60,7 @@ where event_name in (
     'BOE_social_sign_in_tapped',
     'BOE_etsy_sign_in_tapped'
 ))
+, great_success as (
 select
   browser_id
   , visit_id
@@ -89,3 +90,10 @@ WHERE event_name IN (
   'continue_as_guest_tapped',
   'BOE_social_sign_in_tapped',
   'BOE_etsy_sign_in_tapped')
+)
+select
+  event_name, 
+  count(distinct browser_id)
+from great_success
+where successful_click=1
+group by all 
