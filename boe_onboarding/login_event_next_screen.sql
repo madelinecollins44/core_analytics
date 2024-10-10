@@ -99,3 +99,7 @@ select
 from great_success
 where successful_click=1
 group by all 
+
+------------------------------------------------
+--which social sign ins are most popular
+------------------------------------------------
