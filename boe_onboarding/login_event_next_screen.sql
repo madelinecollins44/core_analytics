@@ -106,3 +106,28 @@ group by all
 ------------------------------------------------
 --which social sign ins are most popular
 ------------------------------------------------
+with all_signin_events as (
+select
+  v.browser_id,
+  e.visit_id,
+  e.sequence_number,
+  beacon.event_name as event_name,
+  (select value from unnest(beacon.properties.key_value) where key = "platform") as platform,
+from 
+  etsy-data-warehouse-dev.madelinecollins.boe_first_visits v
+inner join 
+  etsy-visit-pipe-prod.canonical.visit_id_beacons e using (visit_id)
+where 
+  date(_partitiontime) >= current_date-30 
+  and visit_rnk = 1 --pull out first visit 
+  and event_source in ('ios') 
+  and v._date >= current_date-30
+  and beacon.event_name in ('BOE_social_sign_in_tapped','BOE_etsy_sign_in_tapped')
+)
+select
+  count(distinct case when event_name in ('BOE_social_sign_in_tapped') and platform in ('apple') then browser_id end) as apple_sign_ins,
+  count(distinct case when event_name in ('BOE_social_sign_in_tapped') and platform in ('google') then browser_id end) as google_sign_ins,
+  count(distinct case when event_name in ('BOE_social_sign_in_tapped') and platform in ('facebook') then browser_id end) as facebook_sign_ins,
+  count(distinct case when event_name in ('BOE_etsy_sign_in_tapped') then browser_id end) as etsy_sign_ins
+from all_signin_events
+
