@@ -11,7 +11,10 @@ with all_login_events as (
   b.sequence_number
 from etsy-data-warehouse-dev.madelinecollins.boe_first_visits a
 inner join etsy-data-warehouse-dev.madelinecollins.app_onboarding_events b using (visit_id)
-where event_name in (
+where visit_rnk = 1 --pull out first visit 
+  and _date >= current_date-30
+  and event_source in ('ios') -- only looking at ios 
+  and event_name in ( --only pull in login/ screen related 
 --Registration Web View
       'join_submit',
       'BOE_email_sign_in_webview_cancelled',
