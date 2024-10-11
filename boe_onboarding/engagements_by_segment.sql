@@ -138,5 +138,5 @@ inner join etsy-data-warehouse-prod.weblog.visits v using (visit_id)
 left join etsy-data-warehouse-prod.analytics.listing_views lv on lv.visit_id=f.visit_id
 where 
   v._date >= "2017-01-01" 
-  and v._date >= "2017-01-01
+  and lv._date >= '2017-01-01'
 group by all 
