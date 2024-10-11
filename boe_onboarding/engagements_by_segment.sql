@@ -140,3 +140,42 @@ where
   v._date >= "2017-01-01" 
   and lv._date >= '2017-01-01'
 group by all 
+
+
+
+
+
+
+------------------------------------------------------------
+--testing
+------------------------------------------------------------
+select
+  browser_id
+  , a.visit_id
+  , max(case when beacon.event_name = "signin_submit" then 1 else 0 end) as signed_in
+  , max(case when beacon.event_name = "join_submit" then 1 else 0 end) as registered
+  , max(case when beacon.event_name = "favorites_onboarding_done_button_tapped" then 1 else 0 end) as completes_favorites_quiz 
+  , max(case when beacon.event_name in ('BOE_social_sign_in_tapped') and (select value from unnest(beacon.properties.key_value) where key = "platform") in ('apple') then 1 else 0 end) as apple_signed_in
+  , max(case when beacon.event_name in ('BOE_social_sign_in_tapped') and (select value from unnest(beacon.properties.key_value) where key = "platform") in ('facebook') then 1 else 0 end) as fb_signed_in 
+  , max(case when beacon.event_name in ('BOE_social_sign_in_tapped') and (select value from unnest(beacon.properties.key_value) where key = "platform") in ('google') then 1 else 0 end) as google_signed_in 
+  , max(case when beacon.event_name in ('BOE_etsy_sign_in_tapped') then 1 else 0 end) as etsy_signed_in  
+from `etsy-data-warehouse-dev.madelinecollins.boe_first_visits` a
+inner join etsy-visit-pipe-prod.canonical.visit_id_beacons e 
+  using (visit_id)
+where 
+  date(_partitiontime) >= current_date-35 
+  and beacon.event_name in ('BOE_social_sign_in_tapped','BOE_etsy_sign_in_tapped','signin_submit','favorites_onboarding_done_button_tapped','join_submit')  
+  and a.visit_rnk =1
+  and a._date >= current_date-35
+group by all
+-- browser_id	visit_id	signed_in	registered	completes_favorites_quiz	apple_signed_in	fb_signed_in	google_signed_in	etsy_signed_in
+-- C6757FB6429C477690425E7D88F7	C6757FB6429C477690425E7D88F7.1726629087177.1	0	0	0	0	0	0	0
+-- A618379941224A7691BC3033EDC6	A618379941224A7691BC3033EDC6.1726417473985.1	0	0	1	0	0	0	0
+-- 3494579A166A418993E0B272D97C	3494579A166A418993E0B272D97C.1728129999496.1	0	0	0	0	0	0	1
+-- 52A714DC27F44E64BE92224B24E8	52A714DC27F44E64BE92224B24E8.1726400512037.1	0	0	0	0	0	0	0
+-- B8A35760F19743A28BE0A19C6B81	B8A35760F19743A28BE0A19C6B81.1727807233191.1	0	0	1	0	0	0	0
+-- 18CD12A088434A4E972B06263A44	18CD12A088434A4E972B06263A44.1727121780775.1	0	0	0	0	0	0	1
+-- 24CA406243E4493D92D9EF43DD4A	24CA406243E4493D92D9EF43DD4A.1727212248122.1	0	1	1	0	0	0	1
+-- F0F7B2F44D964AE381C507F2F695	F0F7B2F44D964AE381C507F2F695.1727235009162.1	0	0	0	0	0	0	0
+-- B96D0FE35B834330A8AEDF32A0D9	B96D0FE35B834330A8AEDF32A0D9.1727110886215.1	0	0	1	0	0	0	1
+-- 8D2099F9A0804BEDAC51B583ED02	8D2099F9A0804BEDAC51B583ED02.1727030110496.1	0	1	1	0	0	0	1
