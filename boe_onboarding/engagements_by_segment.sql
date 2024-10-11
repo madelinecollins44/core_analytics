@@ -5,18 +5,18 @@ select
   , max(case when beacon.event_name = "signin_submit" then 1 else 0 end) as signed_in
   , max(case when beacon.event_name = "join_submit" then 1 else 0 end) as registered
   , max(case when beacon.event_name = "favorites_onboarding_done_button_tapped" then 1 else 0 end) as completes_favorites_quiz 
-  , max(case when beacon.event_name in ('BOE_social_sign_in_tapped') and platform in ('apple') then 1 else 0 end) as apple_signed_in
-  , max(case when beacon.event_name in ('BOE_social_sign_in_tapped') and platform in ('facebook') then 1 else 0 end) as fb_signed_in 
-  , max(case when beacon.event_name in ('BOE_social_sign_in_tapped') and platform in ('google') then 1 else 0 end) as google_signed_in 
+  , max(case when beacon.event_name in ('BOE_social_sign_in_tapped') and (select value from unnest(beacon.properties.key_value) where key = "platform") in ('apple') then 1 else 0 end) as apple_signed_in
+  , max(case when beacon.event_name in ('BOE_social_sign_in_tapped') and (select value from unnest(beacon.properties.key_value) where key = "platform") in ('facebook') then 1 else 0 end) as fb_signed_in 
+  , max(case when beacon.event_name in ('BOE_social_sign_in_tapped') and (select value from unnest(beacon.properties.key_value) where key = "platform") in ('google') then 1 else 0 end) as google_signed_in 
   , max(case when beacon.event_name in ('BOE_etsy_sign_in_tapped') then 1 else 0 end) as etsy_signed_in  
 from `etsy-data-warehouse-dev.madelinecollins.boe_first_visits` a
 inner join etsy-visit-pipe-prod.canonical.visit_id_beacons e 
   using (visit_id)
 where 
-  date(_partitiontime) >= current_date-30 
+  date(_partitiontime) >= current_date-35 
   and beacon.event_name in ('BOE_social_sign_in_tapped','BOE_etsy_sign_in_tapped','signin_submit','favorites_onboarding_done_button_tapped','join_submit')  
   and a.visit_rnk =1
-  and a._date >= current_date-30
+  and a._date >= current_date-35
 group by all
 )
 select
@@ -134,7 +134,7 @@ select
       then f.browser_id end) as etsy_signed_in_engaged_visits
   , count(case when etsy_signed_in > 0 then lv.listing_id end) as etsy_signed_in_listing_views
 from first_visits f
-inner join etsy-data-warehouse-prod.weblog.visits v using (visit_id)
+left join etsy-data-warehouse-prod.weblog.visits v using (visit_id)
 left join etsy-data-warehouse-prod.analytics.listing_views lv on lv.visit_id=f.visit_id
 where 
   v._date >= "2017-01-01" 
