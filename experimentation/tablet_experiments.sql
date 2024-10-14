@@ -131,10 +131,7 @@ CREATE OR REPLACE TABLE `etsy-data-warehouse-dev.madelinecollins.first_bucket_se
         `etsy-data-warehouse-dev.madelinecollins.first_bucket_segments_unpivoted`
     PIVOT(
         MAX(event_value)
-        FOR event_id IN (
-            "buyer_segment",
-            "canonical_region"
-        )
+        FOR event_id IN ("is_tablet")
     )
 );
 
@@ -147,10 +144,14 @@ CREATE OR REPLACE TABLE `etsy-data-warehouse-dev.madelinecollins.events` AS (
         *
     FROM
         UNNEST([
-            "backend_cart_payment", -- conversion rate
+            "backend_cart_payment", -- conversion rate, total orders
             "total_winsorized_gms", -- winsorized acbv
             "prolist_total_spend",  -- prolist revenue
-            "gms"                   -- note: gms data is in cents
+            "gms",                  -- note: gms data is in cents
+            "total_winsorized_order_value", -- aov 
+            "visits", -- mean visits 
+            "engaged_visits", -- mean engaged visits 
+
         ]) AS event_id
 );
 
