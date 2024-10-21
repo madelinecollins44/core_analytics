@@ -35,13 +35,14 @@ where
  select
     beacon.event_name  as event_name,
     (select value from unnest(beacon.properties.key_value) where key = "first_view") as first_view,
+    (select value from unnest(beacon.properties.key_value) where key = "full_gate") as full_gate,
     visit_id,
     sequence_number
   from etsy-visit-pipe-prod.canonical.visit_id_beacons 
   where date(_partitiontime) >= current_date-30
       and (beacon.event_name in (
       --log in spalsh screen 
-      'sign_in_screen',
+      'sign_in_screen', -- this also captures sign in from homescreen. distinction made by fullgate property
       'continue_as_guest_tapped',
       'login_view',
       'BOE_social_sign_in_tapped',
@@ -90,6 +91,7 @@ where
   and (select value from unnest(beacon.properties.key_value) where key = "first_view") in ("true")))
   group by all 
 );
+
 
 --------------------------------------------------------------------------------------------------------
 --get list of browsers and events to make sure browsers arent being double counted for events
