@@ -113,6 +113,7 @@ from etsy-data-warehouse-dev.madelinecollins.boe_first_visits
   select
     event_name,
     first_view,
+    full_gate,
     v.visit_id,
     v.browser_id,
     v.new_visitor
@@ -125,13 +126,12 @@ SELECT
     new_visitor,
     event_name ,
     CASE 
-      WHEN event_name  IN (
-        'sign_in_screen',
-        'continue_as_guest_tapped',
-        'login_view',
-        'BOE_social_sign_in_tapped',
-        'BOE_etsy_sign_in_tapped'
-      ) THEN '1 - Log In Splash Screen'
+      WHEN (event_name IN ('sign_in_screen') and full_gate IN ('true')) -- only need this event to show when on sign in screen from launch 
+        -- 'continue_as_guest_tapped',
+        -- 'login_view',
+        -- 'BOE_social_sign_in_tapped',
+        -- 'BOE_etsy_sign_in_tapped'
+      THEN '1 - Log In Splash Screen'
       WHEN event_name  IN (
         'join_submit',
         'BOE_email_sign_in_webview_cancelled'
@@ -174,6 +174,9 @@ SELECT
       WHEN 
         (event_name IN ('homescreen_complementary') and first_view = "true")
          THEN '8 - Initial Content'
+      WHEN 
+        (event_name IN ('sign_in_screen') and full_gate IN ('false'))
+         THEN '9- Sign In from Homescreen/ Cart/ Deals/ Favorites/ Etc'   
       ELSE NULL END as screen,
     browser_id
 FROM 
