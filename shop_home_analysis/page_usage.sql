@@ -79,15 +79,24 @@ where v._date >= current_date-30
 group by all 
 
 --HOW MANY TIMES DO VISITS SEE THE SHOP HOME PAGE IN A VISIT
-with shop_home_visits as (
+
+with visits_see_shop_home as (
+select
+  visit_id
+from etsy-data-warehouse-prod.weblog.events
+where _date >= current_date-30 AND event_type in ('shop_home')
+)
+, pageviews_per_visit as (
 select
   visit_id
   , count(distinct case when event_type in ('shop_home') then sequence_number end) as shop_home_views
-from etsy-data-warehouse-prod.weblog.events
-where _date >= current_date-30
+from visits_see_shop_home
+inner join etsy-data-warehouse-prod.weblog.events using (visit_id)
+where _date >= current_date-30 
 group by all 
 )
-select avg(shop_home_views) from shop_home_visits
+select avg(shop_home_views) from pageviews_per_visit
+
 ---------------------------------------------------------------------------------------------------------------------------------------------
 --Which types of buyers go to shop home? 
 ----Buyer segment, visit channel, platform, past 7d visits, X listing views in session, engaged visits, signed in vs signed out, left reviews
