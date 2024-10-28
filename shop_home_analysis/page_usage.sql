@@ -26,7 +26,6 @@ order by 2 desc
 -- autosuggest, 51274396
   
 ----compare to most popular pages
-
 select
   -- v._date, 
   count(distinct v.visit_id) as total_visits, 
@@ -79,6 +78,16 @@ left join
 where v._date >= current_date-30
 group by all 
 
+--HOW MANY TIMES DO VISITS SEE THE SHOP HOME PAGE IN A VISIT
+with shop_home_visits as (
+select
+  visit_id
+  , count(distinct case when event_type in ('shop_home') then sequence_number end) as shop_home_views
+from etsy-data-warehouse-prod.weblog.events
+where _date >= current_date-30
+group by all 
+)
+select avg(shop_home_views) from shop_home_visits
 ---------------------------------------------------------------------------------------------------------------------------------------------
 --Which types of buyers go to shop home? 
 ----Buyer segment, visit channel, platform, past 7d visits, X listing views in session, engaged visits, signed in vs signed out, left reviews
