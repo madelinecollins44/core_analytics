@@ -180,16 +180,18 @@ group by all
 )
 select 
   count(distinct visit_id) as visits,
-  count(distinct mapped_user_id) as users
+  count(distinct mapped_user_id) as users,
+  count(distinct case when event_type in ('shop_home') then visit_id end) as shop_home_visits,
+  count(distinct case when event_type in ('shop_home') then mapped_user_id end) as shop_home_users,
 from 
   next_visit v
 inner join 
   etsy-data-warehouse-prod.weblog.events e using (visit_id)
 where 
-  event_type in ('shop_home')
-  and v._date >= current_date-30
+  v._date >= current_date-30
   and date_diff(v.next_visit_date,v._date, day) <=7
 group by all
+
 
 ----BUYER SEGMENT
   -- begin
