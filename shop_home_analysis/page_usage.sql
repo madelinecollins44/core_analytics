@@ -83,6 +83,122 @@ group by all
 --Which types of buyers go to shop home? 
 ----Buyer segment, visit channel, platform, past 7d visits, X listing views in session, engaged visits, signed in vs signed out, left reviews
 ---------------------------------------------------------------------------------------------------------------------------------------------
+----REPORTING CHANNEL 
+-- case 
+--       when top_channel in ('direct') then 'Direct'
+--       when top_channel in ('dark') then 'Dark'
+--       when top_channel in ('internal') then 'Internal'
+--       when top_channel in ('seo') then 'SEO'
+--       when top_channel like 'social_%' then 'Non-Paid Social'
+--       when top_channel like 'email%' then 'Email'
+--       when top_channel like 'push_%' then 'Push'
+--       when top_channel in ('us_paid','intl_paid') then
+--         case
+--           when (second_channel like '%gpla' or second_channel like '%bing_plas') then 'PLA'
+--           when (second_channel like '%_ppc' or second_channel like 'admarketplace') then case
+--           when third_channel like '%_brand' then 'SEM - Brand' else 'SEM - Non-Brand'
+--           end
+--       when second_channel='affiliates' then 'Affiliates'
+--       when (second_channel like 'facebook_disp%' or second_channel like 'pinterest_disp%') then 'Paid Social'
+--       when second_channel like '%native_display' then 'Display'
+--       when second_channel in ('us_video','intl_video') then 'Video' else 'Other Paid' end
+--       else 'Other Non-Paid' 
+--       end as reporting_channel
+
+----SIGNED IN VS SIGNED OUT 
+  -- case when v.user_id is null or v.user_id = 0 then "signed out"
+  -- else "signed in"
+  -- end as status
+    
+select 
+--platform
+  , count(distinct visit_id) as visits 
+from 
+  etsy-data-warehouse-prod.weblog.visits v
+inner join 
+  etsy-data-warehouse-prod.weblog.events e using (visit_id)
+where event_type in ('shop_home')
+and v._date >= current_date-30
+group by all
+
+
+  
+----ENGAGED VISITS 
+select
+  count(distinct visit_id) as total_visits,
+ count(distinct case 
+      when timestamp_diff(v.end_datetime, v.start_datetime,second)> 300 
+      or v.cart_adds>0 or v.fav_item_count > 0 or v.fav_shop_count > 0
+      or v.converted > 0
+    then v.visit_id end) as engaged_visits,
+  count(distinct case 
+      when (timestamp_diff(v.end_datetime, v.start_datetime,second)> 300 
+      or v.cart_adds>0 or v.fav_item_count > 0 or v.fav_shop_count > 0
+      or v.converted > 0)
+      and event_type in ('shop_home')
+    then v.visit_id end) as shop_home_engaged_visits   
+from 
+  etsy-data-warehouse-prod.weblog.visits v
+inner join 
+  etsy-data-warehouse-prod.weblog.events e using (visit_id)
+where v._date >= current_date-30
+group by all
+
+----REVISIT WITHIN 7 DAYS
+------users that see the shop_home page, and then visit again within 7 days 
+with next_visit as (
+select
+  mapped_user_id,
+  v._date,
+  v.start_datetime,
+  visit_id,
+  lead(v._date) over (partition by mapped_user_id order by v.start_datetime asc) as next_visit_date
+from 
+  `etsy-data-warehouse-prod.weblog.visits` v  
+left join  
+  etsy-data-warehouse-prod.user_mart.user_mapping um using (user_id)
+where 
+  v._date >= current_date-30
+group by all
+)
+select 
+  count(distinct mapped_user_id) as mapped_users
+from 
+  next_visit v
+inner join 
+  etsy-data-warehouse-prod.weblog.events e using (visit_id)
+where 
+  event_type in ('shop_home')
+  and v._date >= current_date-30
+  and date_diff(v._date, v.next_visit_date, day) <=7
+group by all
+
+----BUYER SEGMENT
+
+  -- begin
+-- create or replace temp table buyer_segments as (select * from etsy-data-warehouse-prod.rollups.buyer_segmentation_vw where as_of_date >= current_date-30);
+-- end 
+--------etsy-bigquery-adhoc-prod._script5dba7009b5483b12d9ab6aa377f829e47d355146.buyer_segments
+
+  select 
+  buyer_segment
+  , count(distinct visit_id) as visits 
+  , count(distinct um.mapped_user_id) as users 
+from 
+  etsy-data-warehouse-prod.weblog.visits v
+inner join 
+  etsy-data-warehouse-prod.weblog.events e using (visit_id)
+left join 
+  etsy-data-warehouse-prod.user_mart.user_mapping um  
+    on v.user_id=um.user_id
+left join 
+  etsy-bigquery-adhoc-prod._script5dba7009b5483b12d9ab6aa377f829e47d355146.buyer_segments bs
+    on um.mapped_user_id=bs.mapped_user_id
+where 
+  event_type in ('shop_home')
+  and v._date >=current_date-30
+group by all
+
 ---------------------------------------------------------------------------------------------------------------------------------------------
 --Where do they go after shop home?  
 ----Next screen, segment by visitors that purchase in-session vs. not, purchase something from the shop vs. not
