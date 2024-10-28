@@ -150,6 +150,7 @@ group by all
 --How do they get to shop home?  
 ----Prior screen, segment by visitors that purchase in-session vs. not, purchase something from the shop vs. not
 ---------------------------------------------------------------------------------------------------------------------------------------------
+--to find if bought something from shop, use shop_id from shop_home event and then look at transactions table for purchased shop_id
 ---------------------------------------------------------------------------------------------------------------------------------------------
 --Where do they go after shop home?  
 ----Next screen, segment by visitors that purchase in-session vs. not, purchase something from the shop vs. not
