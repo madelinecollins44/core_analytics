@@ -220,7 +220,33 @@ left join
     on um.mapped_user_id=bs.mapped_user_id
 group by all
 
+---listing views 
+with listing_views as (
+select 
+  visit_id
+  , count(listing_id) as listings_viewed
+from etsy-data-warehouse-prod.analytics.listing_views
+where _date >= current_date-30
+group by all
+)
+select 
+  count(distinct visit_id) as total_visits_with_listing_views,
+  count(distinct case when listings_viewed >=1 and event_type in ('shop_home') then visit_id end) as _1_plus_listings_viewed,
+  count(distinct case when listings_viewed >=5 and event_type in ('shop_home') then visit_id end) as _5_plus_listings_viewed,
+  count(distinct case when listings_viewed >=10 and event_type in ('shop_home') then visit_id end) as _10_plus_listings_viewed,
+  count(distinct case when listings_viewed >=20 and event_type in ('shop_home') then visit_id end) as _20_plus_listings_viewed,
+from 
+  listing_views v
+inner join 
+  etsy-data-warehouse-prod.weblog.events e using (visit_id)
+where 
+  e._date >= current_date-30
+group by all
 
+---------------------------------------------------------------------------------------------------------------------------------------------
+--How do they get to shop home?  
+----Prior screen, segment by visitors that purchase in-session vs. not, purchase something from the shop vs. not
+---------------------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------------------
 --Where do they go after shop home?  
 ----Next screen, segment by visitors that purchase in-session vs. not, purchase something from the shop vs. not
