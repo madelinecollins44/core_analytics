@@ -33,8 +33,7 @@ select distinct
 from 
   etsy-data-warehouse-prod.weblog.events
 where 
-  event_type in ('view_listing','shop_home','cart_view','home','homescreen','recommended','search','market')
-  and _date>= current_date-30
+   _date>= current_date-30
 )
 select
   -- v._date, 
