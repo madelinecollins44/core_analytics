@@ -26,15 +26,7 @@ order by 2 desc
 -- autosuggest, 51274396
   
 ----compare to most popular pages
-with event_visits as (
-select distinct
-  visit_id,
-  event_type
-from 
-  etsy-data-warehouse-prod.weblog.events
-where 
-   _date>= current_date-30
-)
+
 select
   -- v._date, 
   count(distinct v.visit_id) as total_visits, 
@@ -56,7 +48,7 @@ select
   sum(case when event_type in ('market') and ev.visit_id is not null then v.total_gms end) as market_gms, 
 from 
   etsy-data-warehouse-prod.weblog.visits v
-left join event_visits ev using (visit_id)
+left join etsy-data-warehouse-prod.weblog.events ev using (visit_id)
 where v._date >= current_date-30
 group by all 
 
