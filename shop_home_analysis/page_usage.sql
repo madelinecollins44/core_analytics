@@ -109,7 +109,8 @@ group by all
   -- case when v.user_id is null or v.user_id = 0 then "signed out"
   -- else "signed in"
   -- end as status
-    
+ 
+----PLATFORM   
 select 
 --platform
   , count(distinct visit_id) as visits 
@@ -121,8 +122,6 @@ where event_type in ('shop_home')
 and v._date >= current_date-30
 group by all
 
-
-  
 ----ENGAGED VISITS 
 select
   count(distinct visit_id) as total_visits,
@@ -174,30 +173,34 @@ where
 group by all
 
 ----BUYER SEGMENT
-
   -- begin
 -- create or replace temp table buyer_segments as (select * from etsy-data-warehouse-prod.rollups.buyer_segmentation_vw where as_of_date >= current_date-30);
 -- end 
 --------etsy-bigquery-adhoc-prod._script5dba7009b5483b12d9ab6aa377f829e47d355146.buyer_segments
 
-  select 
+with all_shop_home_visits as (
+select distinct
+  user_id
+  , visit_id
+from etsy-data-warehouse-prod.weblog.events
+where
+  _date >= current_date-30
+  and event_type in ('shop_home')
+)
+select 
   buyer_segment
-  , count(distinct visit_id) as visits 
+  , count(distinct visit_id) as total_visits
   , count(distinct um.mapped_user_id) as users 
 from 
-  etsy-data-warehouse-prod.weblog.visits v
-inner join 
-  etsy-data-warehouse-prod.weblog.events e using (visit_id)
+  all_shop_home_visits v
 left join 
   etsy-data-warehouse-prod.user_mart.user_mapping um  
     on v.user_id=um.user_id
 left join 
   etsy-bigquery-adhoc-prod._script5dba7009b5483b12d9ab6aa377f829e47d355146.buyer_segments bs
     on um.mapped_user_id=bs.mapped_user_id
-where 
-  event_type in ('shop_home')
-  and v._date >=current_date-30
 group by all
+
 
 ---------------------------------------------------------------------------------------------------------------------------------------------
 --Where do they go after shop home?  
