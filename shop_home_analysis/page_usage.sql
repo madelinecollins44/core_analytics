@@ -169,7 +169,7 @@ inner join
 where 
   event_type in ('shop_home')
   and v._date >= current_date-30
-  and date_diff(v._date, v.next_visit_date, day) <=7
+  and date_diff(v.next_visit_date,v._date, day) <=7
 group by all
 
 ----BUYER SEGMENT
