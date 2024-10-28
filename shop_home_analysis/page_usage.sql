@@ -79,7 +79,6 @@ where v._date >= current_date-30
 group by all 
 
 --HOW MANY TIMES DO VISITS SEE THE SHOP HOME PAGE IN A VISIT
-
 with visits_see_shop_home as (
 select
   visit_id
@@ -96,6 +95,7 @@ where _date >= current_date-30
 group by all 
 )
 select avg(shop_home_views) from pageviews_per_visit
+  --2.6976682591429628
 
 ---------------------------------------------------------------------------------------------------------------------------------------------
 --Which types of buyers go to shop home? 
