@@ -161,7 +161,8 @@ where
 group by all
 )
 select 
-  count(distinct mapped_user_id) as mapped_users
+  count(distinct visit_id) as visits,
+  count(distinct mapped_user_id) as users
 from 
   next_visit v
 inner join 
