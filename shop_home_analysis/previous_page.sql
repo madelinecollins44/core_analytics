@@ -80,3 +80,17 @@ where _date >= current_date-30
 and landing_event in ('shop_home')
 group by all 
 
+---looking at visits that have purchased from that shop
+--find visit_ids, shop_ids, sequence number
+with get_shop_ids as (
+select
+  a.visit_id
+	, a.sequence_number
+	, (select value from unnest(beacon.properties.key_value) where key = "shop_id") as shop_id
+	, (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id") as shop_shop_id
+from 
+  `etsy-visit-pipe-prod.canonical.visit_id_beacons` 
+where beacon.event_name in ('shop_home')
+)
+--find listings purchased with shop_id
+--make dimension visits that purchased something from the shop, lead/ lag 
