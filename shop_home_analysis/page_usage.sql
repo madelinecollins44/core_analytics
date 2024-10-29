@@ -108,6 +108,35 @@ where
   and date_diff(v.next_visit_date,v._date, day) <=7
 group by all
 
+---users that revisit shop home within 7 days 
+  with next_visit as (
+select
+  mapped_user_id,
+  v._date,
+  v.start_datetime,
+  v.visit_id,
+  lead(v._date) over (partition by mapped_user_id order by v.start_datetime asc) as next_visit_date
+from 
+  `etsy-data-warehouse-prod.weblog.visits` v  
+left join  
+  etsy-data-warehouse-prod.user_mart.user_mapping um using (user_id)
+inner join 
+  etsy-data-warehouse-prod.weblog.events e 
+    on v.visit_id=e.visit_id
+where 
+  v._date >= current_date-30
+  and event_type in ('shop_home')
+group by all
+)
+select 
+  count(distinct visit_id) as visits,
+  count(distinct mapped_user_id) as users,
+from 
+  next_visit v
+where 
+  date_diff(v.next_visit_date,v._date, day) <=7
+group by all
+
 
 ----BUYER SEGMENT
   -- begin
