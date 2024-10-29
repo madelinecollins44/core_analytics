@@ -77,8 +77,12 @@ group by all
 
 --how many listings views come from shop home?
 select
+  referring_page_event,
   count(listing_id) as listing_views,
-  count(case when referring_page_event in ('shop_home') then listing_id end) as shop_home_listing_views
+  count(case when purchased_after_view > 0 then listing_id end) as purchased_listings,
+  count(case when purchased_after_view > 0 then listing_id end)/count(listing_id) as purchase_rate
 from etsy-data-warehouse-prod.analytics.listing_views
-where _date >= current_date-30
-group by all  
+where 
+  _date >= current_date-30
+group by all 
+order by 4 desc
