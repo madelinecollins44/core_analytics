@@ -62,6 +62,21 @@ inner join
 where v._date >= current_date-30
 group by all
 
+--engaged types within shop home traffic 
+select
+  count(distinct visit_id) as total_visits,
+  count(distinct case when timestamp_diff(v.end_datetime, v.start_datetime,second)> 300 then v.visit_id end) as long_visits,
+  count(distinct case when v.cart_adds> 0 or v.fav_item_count > 0 or v.fav_shop_count > 0 then v.visit_id end) as favoriting_visit,
+  count(distinct case when v.converted > 0 then v.visit_id end) as converted_visits, 
+from 
+  etsy-data-warehouse-prod.weblog.visits v
+inner join 
+  etsy-data-warehouse-prod.weblog.events e using (visit_id)
+where 
+  v._date >= current_date-30
+  and event_type in ('shop_home')
+group by all
+  
 ----REVISIT WITHIN 7 DAYS
 ------users that see the shop_home page, and then visit again within 7 days 
 with next_visit as (
