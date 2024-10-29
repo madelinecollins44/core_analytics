@@ -109,7 +109,7 @@ where
 group by all
 
 ---users that revisit shop home within 7 days 
-  with next_visit as (
+with next_visit as (
 select
   mapped_user_id,
   v._date,
@@ -136,6 +136,7 @@ from
 where 
   date_diff(v.next_visit_date,v._date, day) <=7
 group by all
+
 
 
 ----BUYER SEGMENT
