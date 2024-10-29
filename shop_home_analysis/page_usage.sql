@@ -197,3 +197,60 @@ group by all
 ----Scroll depth, clicks, etc
 ----Segment by visitors that purchase in-session vs. not, purchase something from the shop vs. not
 ---------------------------------------------------------------------------------------------------------------------------------------------
+with page_actions as (
+select distinct
+  visit_id
+	, sequence_number
+  , beacon.event_name as event_name
+	, (select value from unnest(beacon.properties.key_value) where key = "shop_id") as shop_id
+from 
+  `etsy-visit-pipe-prod.canonical.visit_id_beacons` 
+where 
+  date(_partitiontime) >= current_date-30
+ and beacon.event_name in (
+    'shop_home', -- main page
+    'shop_home_about_section_seen', -- scroll to about section
+    'shop_home_reviews_pagination', -- sort reviews
+    'shop_home_reviews_section_top_seen', -- scroll to reviews section
+    'shop_home_policies_section_seen', -- scroll to store policies
+    'shop_home_listings_section_seen',-- scroll to top listings section
+    'shop_home_listing_grid_seen', -- scroll to listing grid
+    'shop_home_branding_section_seen',-- see branding at top of page
+    'shop_home_announcement_section_seen',-- see branding at top of page
+    'footer_seen', -- first footer seen, subscribe to etsy, bottom of shop home page
+    'registry_ingress_footer_seen', -- very bottom of page, etsy download app cta, shop/ sell/ about/ help options
+    'shop_about_new_video_play', -- clicked on video
+    'shop_home_branded_carousel_arrow_click', -- clicked through carousel at top of page 
+    'shop_home_items_pagination', -- click on next page of listings
+    'shop_home_branded_carousel_pagination_click',-- click through carousel
+    'favorite_shop',-- favorite the shop
+    'shop_home_reviews_jump_link_hover', -- click on reviews, brings directly to bottom
+    'chat_dialog_open', -- starts chat with seller
+    'shop_home_section_select', -- click on listing filter in the grid
+    'neu_favorite_click', -- favorite item in listing grid
+    'shop_home_dropdown_engagement'-- filter listing grid
+    )
+)
+select 
+  count(distinct case when event_name in ('shop_home') then visit_id end) as shop_home,
+  count(distinct case when event_name in ('shop_home_about_section_seen') then visit_id end) as shop_home_about_section_seen,
+  count(distinct case when event_name in ('shop_home_reviews_pagination') then visit_id end) as shop_home_reviews_pagination,
+  count(distinct case when event_name in ('shop_home_reviews_section_top_seen') then visit_id end) as shop_home_reviews_section_top_seen,
+  count(distinct case when event_name in ('shop_home_policies_section_seen') then visit_id end) as shop_home_policies_section_seen,
+  count(distinct case when event_name in ('shop_home_listings_section_seen') then visit_id end) as shop_home_listings_section_seen,
+  count(distinct case when event_name in ('shop_home_listing_grid_seen') then visit_id end) as shop_home_listing_grid_seen,
+  count(distinct case when event_name in ('shop_home_branding_section_seen') then visit_id end) as shop_home_branding_section_seen,
+  count(distinct case when event_name in ('shop_home_announcement_section_seen') then visit_id end) as shop_home_announcement_section_seen,
+  count(distinct case when event_name in ('footer_seen') then visit_id end) as footer_seen,
+  count(distinct case when event_name in ('registry_ingress_footer_seen') then visit_id end) as registry_ingress_footer_seen,
+  count(distinct case when event_name in ('shop_about_new_video_play') then visit_id end) as shop_about_new_video_play,
+  count(distinct case when event_name in ('shop_home_branded_carousel_arrow_click') then visit_id end) as shop_home_branded_carousel_arrow_click,
+  count(distinct case when event_name in ('shop_home_items_pagination') then visit_id end) as shop_home_items_pagination,
+  count(distinct case when event_name in ('shop_home_branded_carousel_pagination_click') then visit_id end) as shop_home_branded_carousel_pagination_click,
+  count(distinct case when event_name in ('favorite_shop') then visit_id end) as favorite_shop,
+  count(distinct case when event_name in ('shop_home_reviews_jump_link_hover') then visit_id end) as shop_home_reviews_jump_link_hover,
+  count(distinct case when event_name in ('chat_dialog_open') then visit_id end) as chat_dialog_open,
+  count(distinct case when event_name in ('shop_home_section_select') then visit_id end) as shop_home_section_select,
+  count(distinct case when event_name in ('neu_favorite_click') then visit_id end) as neu_favorite_click,
+  count(distinct case when event_name in ('shop_home_dropdown_engagement') then visit_id end) as shop_home_dropdown_engagement,
+from page_actions
