@@ -51,11 +51,3 @@ where
   and v._date >= current_date-30
 group by all 
 order by 2 desc 
-
---how many listings views come from shop home?
-select
-  count(listing_id) as listing_views,
-  count(case when referring_page_event in ('shop_home') then listing_id end) as shop_home_listing_views
-from etsy-data-warehouse-prod.analytics.listing_views
-where _date >= current_date-30
-group by all  
