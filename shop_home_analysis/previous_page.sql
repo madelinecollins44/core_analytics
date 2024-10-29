@@ -51,3 +51,12 @@ where
   and v._date >= current_date-30
 group by all 
 order by 2 desc 
+
+--where do landings come from?
+select  
+  top_channel,
+  count(distinct visit_id) as visits
+from etsy-data-warehouse-prod.weblog.visits
+where _date >= current_date-30
+and landing_event in ('shop_home')
+
