@@ -64,3 +64,13 @@ select * from shop_home_visits where visit_id in ('Aa4HjNXASTuQllHw7jRVX-EkvKkO.
 --   event_type in ('shop_home')
 -- group by all 
 -- order by 2 desc 
+
+---purchase rate of listings viewed from shop_home
+select
+  referring_page_event,
+  count(listing_id) as listing_views,
+  count(case when purchased_after_view > 0 then listing_id end) as purchased_listings
+from etsy-data-warehouse-prod.analytics.listing_views
+where 
+  _date >= current_date-30
+group by all 
