@@ -90,13 +90,15 @@ select
 	, (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id") as shop_shop_id
 from 
   `etsy-visit-pipe-prod.canonical.visit_id_beacons` 
-where beacon.event_name in ('shop_home')
+where 
+  beacon.event_name in ('shop_home')
+  and date(_partitiontime) >= current_date-30
 )
 , purchased_from_shops as (
 select
   tv.visit_id, 
 	t.seller_user_id,
-	sb.shop_id
+	cast(sb.shop_id as string) as shop_id
 	--shop_id here 
 from 
   etsy-data-warehouse-prod.transaction_mart.transactions_visits tv
