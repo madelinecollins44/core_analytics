@@ -195,11 +195,56 @@ group by all
 --How do they get to shop home?  
 ----Prior screen, segment by visitors that purchase in-session vs. not, purchase something from the shop vs. not
 ---------------------------------------------------------------------------------------------------------------------------------------------
+--overall traffic to shop home
+with shop_home_visits as (
+select
+  visit_id,
+  sequence_number,
+  event_type,
+  lag(event_type) over (partition by visit_id order by sequence_number) as previous_page
+from 
+  etsy-data-warehouse-prod.weblog.events
+where
+  _date >= current_date-30
+  and page_view=1 
+)
+select
+  previous_page,
+  count(distinct visit_id) as visits
+from 
+  shop_home_visits
+where 
+  event_type in ('shop_home')
+group by all 
+order by 2 desc 
+
 --to find if bought something from shop, use shop_id from shop_home event and then look at transactions table for purchased shop_id
 ---------------------------------------------------------------------------------------------------------------------------------------------
 --Where do they go after shop home?  
 ----Next screen, segment by visitors that purchase in-session vs. not, purchase something from the shop vs. not
 ---------------------------------------------------------------------------------------------------------------------------------------------
+--overall traffic from shop home
+with shop_home_visits as (
+select
+  visit_id,
+  sequence_number,
+  event_type,
+  lead(event_type) over (partition by visit_id order by sequence_number) as next_page
+from 
+  etsy-data-warehouse-prod.weblog.events
+where
+  _date >= current_date-30
+  and page_view=1 
+)
+select
+  next_page,
+  count(distinct visit_id) as visits
+from 
+  shop_home_visits
+where 
+  event_type in ('shop_home')
+group by all 
+order by 2 desc 
 
 ---------------------------------------------------------------------------------------------------------------------------------------------
 --What are the most used parts of the page? 
