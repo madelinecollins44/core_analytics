@@ -8,7 +8,7 @@ select
   visit_id,
   sequence_number,
   event_type,
-  lead(event_type) over (partition by visit_id order by sequence_number) as previous_page
+  lead(event_type) over (partition by visit_id order by sequence_number) as next_page
 from 
   etsy-data-warehouse-prod.weblog.events
 where
@@ -16,7 +16,7 @@ where
   and page_view=1 
 )
 select
-  previous_page,
+  next_page,
   count(distinct visit_id) as visits
 from 
   shop_home_visits
