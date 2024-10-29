@@ -25,10 +25,11 @@ order by 2 desc
 --browselistings, 60008060
 -- autosuggest, 51274396
   
-----compare to most popular pages
+----compare to most popular pages, visits 
 select
   -- v._date, 
-  count(distinct v.visit_id) as total_visits, 
+  -- count(distinct v.visit_id) as total_visits, 
+  --   sum(v.total_gms) as total_gms, 
   count(distinct case when event_type in ('view_listing') then ev.visit_id end) as view_listing_visits, 
   count(distinct case when event_type in ('shop_home') then ev.visit_id end) as shop_home_visits, 
   count(distinct case when event_type in ('cart_view') then ev.visit_id end) as cart_view_visits, 
@@ -36,22 +37,37 @@ select
   count(distinct case when event_type in ('recommended') then ev.visit_id end) as recommended_visits, 
   count(distinct case when event_type in ('search') then ev.visit_id end) as search_visits, 
   count(distinct case when event_type in ('market') then ev.visit_id end) as market_visits, 
-
-  sum(v.total_gms) as total_gms, 
-  sum(case when event_type in ('view_listing') and ev.visit_id is not null then v.total_gms end) as view_listing_gms, 
-  sum(case when event_type in ('shop_home') and ev.visit_id is not null then v.total_gms end) as shop_home_gms, 
-  sum(case when event_type in ('cart_view') and ev.visit_id is not null then v.total_gms end) as cart_view_gms, 
-  sum(case when event_type in ('home','homescreen') and ev.visit_id is not null then v.total_gms end) as home_gms, 
-  sum(case when event_type in ('recommended') and ev.visit_id is not null then v.total_gms end) as recommended_gms, 
-  sum(case when event_type in ('search') and ev.visit_id is not null then v.total_gms end) as search_gms, 
-  sum(case when event_type in ('market') and ev.visit_id is not null then v.total_gms end) as market_gms, 
 from 
   etsy-data-warehouse-prod.weblog.visits v
-left join etsy-data-warehouse-prod.weblog.events ev using (visit_id)
+inner join etsy-data-warehouse-prod.weblog.events ev using (visit_id)
 where v._date >= current_date-30
 group by all 
 
-
+----gms from most popular pages
+  --broke it out like this so no double counting of gms
+with key_events as (
+select
+  distinct visit_id
+from 
+  etsy-data-warehouse-prod.weblog.events
+where 
+  _date >= current_date-30 
+  and event_type in ('view_listing')
+  -- and event_type in ('shop_home')
+  -- and event_type in ('cart_view')
+  -- and event_type in ('home','homescreen')
+  -- and event_type in ('recommended')
+  -- and event_type in ('search')
+  -- and event_type in ('market')
+)
+select
+  sum(total_gms) as total_gms, 
+from 
+  etsy-data-warehouse-prod.weblog.visits v
+inner join key_events ev using (visit_id)
+where v._date >= current_date-30
+group by all 
+  
 ----look at agg over last 30 days, platform
 with shop_home_visits as (
 select distinct
