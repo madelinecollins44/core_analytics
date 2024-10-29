@@ -82,15 +82,33 @@ group by all
 
 ---looking at visits that have purchased from that shop
 --find visit_ids, shop_ids, sequence number
-with get_shop_ids as (
+with visited_shop_ids as (
 select
-  a.visit_id
-	, a.sequence_number
+  visit_id
+	, sequence_number
 	, (select value from unnest(beacon.properties.key_value) where key = "shop_id") as shop_id
 	, (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id") as shop_shop_id
 from 
   `etsy-visit-pipe-prod.canonical.visit_id_beacons` 
 where beacon.event_name in ('shop_home')
 )
---find listings purchased with shop_id
---make dimension visits that purchased something from the shop, lead/ lag 
+, purchased_from_shops as (
+select
+  tv.visit_id, 
+	t.seller_user_id,
+	sb.shop_id
+	--shop_id here 
+from 
+  etsy-data-warehouse-prod.transaction_mart.transactions_visits tv
+inner join
+	etsy-data-warehouse-prod.transaction_mart.all_transactions t 
+		using (transaction_id)
+left join etsy-data-warehouse-prod.rollups.seller_basics sb
+	on t.seller_user_id=sb.user_id
+)
+-- how many visitors have actually purchased on the shop 
+select
+  count(distinct a.visit_id) as shop_purchasers,
+  count(distinct b.visit_id) as purchasers_that_have_visited
+from purchased_from_shops a
+left join visited_shop_ids b using (visit_id, shop_id)
