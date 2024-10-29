@@ -98,7 +98,7 @@ group by all
   -- begin
 -- create or replace temp table buyer_segments as (select * from etsy-data-warehouse-prod.rollups.buyer_segmentation_vw where as_of_date >= current_date-30);
 -- end 
---------etsy-bigquery-adhoc-prod._script5dba7009b5483b12d9ab6aa377f829e47d355146.buyer_segments
+-------- etsy-bigquery-adhoc-prod._script096f9ed76a29597dfe9d74159ae108364d865800.buyer_segments
 
 with all_shop_home_visits as (
 select distinct
@@ -119,7 +119,7 @@ left join
   etsy-data-warehouse-prod.user_mart.user_mapping um  
     on v.user_id=um.user_id
 left join 
-  etsy-bigquery-adhoc-prod._script5dba7009b5483b12d9ab6aa377f829e47d355146.buyer_segments bs
+   etsy-bigquery-adhoc-prod._script096f9ed76a29597dfe9d74159ae108364d865800.buyer_segments bs
     on um.mapped_user_id=bs.mapped_user_id
 group by all
 
