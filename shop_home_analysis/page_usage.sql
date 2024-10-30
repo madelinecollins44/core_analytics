@@ -197,6 +197,21 @@ group by all
 ----Scroll depth, clicks, etc
 ----Segment by visitors that purchase in-session vs. not, purchase something from the shop vs. not
 ---------------------------------------------------------------------------------------------------------------------------------------------
+--find events associated w shop home
+	
+select 
+  platform,
+  event_type,
+  count(distinct events.visit_id) as visits
+from 
+  etsy-data-warehouse-prod.weblog.events
+inner join etsy-data-warehouse-prod.weblog.visits using (visit_id)
+where event_type like ('shop_home%')
+and platform in ('boe','desktop','mobile_web')
+and visits._date >= current_date-30
+group by all
+
+--count visits with these events 
 with page_actions as (
 select distinct
   visit_id
