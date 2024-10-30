@@ -83,7 +83,9 @@ where _date >= current_date-30
 and landing_event in ('shop_home')
 group by all 
 
----looking at visits that have purchased from that shop
+---------------------------------------------------------------
+--looking at visits that have purchased from that shop
+---------------------------------------------------------------
 --find visit_ids, shop_ids, sequence number
 with visited_shop_ids as (
 select
@@ -117,3 +119,68 @@ select
   count(distinct b.visit_id) as purchasers_that_have_visited
 from purchased_from_shops a
 left join visited_shop_ids b using (visit_id, shop_id)
+
+--get visit info of when a visit see a shop_home page, previous page
+with visited_shop_ids as (
+select 
+  visit_id
+	, sequence_number
+	, (select value from unnest(beacon.properties.key_value) where key = "shop_id") as shop_id
+	, (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id") as shop_shop_id
+from 
+  `etsy-visit-pipe-prod.canonical.visit_id_beacons` 
+where 
+  beacon.event_name in ('shop_home')
+  and date(_partitiontime) >= current_date-30
+)
+--find out viists have purchased from a particular store
+, purchased_from_shops as (
+select
+  tv.visit_id, 
+	t.seller_user_id,
+	cast(sb.shop_id as string) as shop_id
+from 
+  etsy-data-warehouse-prod.transaction_mart.transactions_visits tv
+inner join
+	etsy-data-warehouse-prod.transaction_mart.all_transactions t 
+		using (transaction_id)
+left join etsy-data-warehouse-prod.rollups.seller_basics sb
+	on t.seller_user_id=sb.user_id
+where tv.date >= current_date-30
+)
+--find visits that have purchased from store, and when they visited the store within that visit 
+, visits_to_home_and_purchase as (
+select
+ b.visit_id,
+ b.sequence_number,
+ b.shop_id,
+ count(a.visit_id) as purchases_from_store
+from visited_shop_ids b 
+inner join purchased_from_shops a using (visit_id, shop_id)
+group by all
+)
+-- select count(visit_id) from visits_to_home_and_purchase
+--120446 unique visit_ids have seen the shop_home page. 376124 visits to home from users that have seen the shop_home and bought something. 
+--get previous page info 
+,  previous_page as (
+select
+  visit_id,
+  sequence_number,
+  event_type,
+  lag(event_type) over (partition by visit_id order by sequence_number) as previous_page
+from 
+  etsy-data-warehouse-prod.weblog.events
+where
+  _date >= current_date-30
+  and page_view=1 
+)
+--look at the next_page for anyone that views the shop_home page + has purchased from that shop in visit
+select 
+	np.previous_page,
+	-- np.event_type
+	count(vh.visit_id) as pageviews,
+	count(distinct vh.visit_id) as unique_visits
+from visits_to_home_and_purchase vh
+inner join previous_page np using (visit_id, sequence_number)
+group by all
+
