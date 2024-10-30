@@ -17,7 +17,8 @@ where
 )
 select
   previous_page,
-  count(distinct visit_id) as visits
+  count(visit_id) as pageviews,
+  count(distinct visit_id) as unique_visits
 from 
   shop_home_visits
 where 
@@ -25,6 +26,7 @@ where
 group by all 
 order by 2 desc 
 
+--visits that convert 
 --visits that convert 
 with shop_home_visits as (
 select
@@ -40,6 +42,7 @@ where
 )
 select
   previous_page,
+  count(visit_id) as pageviews,
   count(distinct visit_id) as visits
 from 
   shop_home_visits shv
