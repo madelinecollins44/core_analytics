@@ -118,7 +118,6 @@ order by 2 desc
 
 --next page of visits that have purchased from the shop itself
 --get visit info of when a visit see a shop_home page
---get visit info of when a visit see a shop_home page
 with visited_shop_ids as (
 select 
   visit_id
@@ -176,7 +175,8 @@ where
 select 
 	np.next_page,
 	-- np.event_type
-	count(vh.visit_id) as visits
+	count(vh.visit_id) as pageviews,
+	count(distinct vh.visit_id) as unique_visits
 from visits_to_home_and_purchase vh
 inner join next_page np using (visit_id, sequence_number)
 group by all
