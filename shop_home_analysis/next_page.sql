@@ -156,3 +156,27 @@ from visited_shop_ids b
 inner join purchased_from_shops a using (visit_id, shop_id)
 group by all
 )
+-- select count(visit_id) from visits_to_home_and_purchase
+--120446 unique visit_ids have seen the shop_home page. 376124 visits to home from users that have seen the shop_home and bought something. 
+--get next page info 
+,  next_page as (
+select
+  visit_id,
+  sequence_number,
+  event_type,
+  lead(event_type) over (partition by visit_id order by sequence_number) as next_page
+from 
+  etsy-data-warehouse-prod.weblog.events
+where
+  _date >= current_date-5
+  and page_view=1 
+)
+--look at the next_page for anyone that views the shop_home page + has purchased from that shop in visit
+select 
+	np.next_page,
+	-- np.event_type
+	count(vh.visit_id) as visits
+from visits_to_home_and_purchase vh
+inner join next_page np using (visit_id, sequence_number)
+group by all
+--120446, 376124 
