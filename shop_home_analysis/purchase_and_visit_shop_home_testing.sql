@@ -62,16 +62,15 @@ where tv.date >= current_date-5
 -- jgY56_uNSP-X0SV_qBp8vg.1729985171591.1	594136519	42543487
 -- jgY56_uNSP-X0SV_qBp8vg.1729985171591.1	594136519	42543487
 
-  select
-  a.visit_id,
-  case when b.visit_id is not null then 1 else 0 end as also_visited
+select
+  distinct a.shop_id
 from purchased_from_shops a
--- thisd will switch to inner join 
 left join visited_shop_ids b using (visit_id, shop_id)
-order by 2 desc 
+where visit_id in ('jgY56_uNSP-X0SV_qBp8vg.1729985171591.1') and b.visit_id is not null 
 --just one particular visit_id to test 
-
-
+-- shop_id
+-- 42543487
+-- 36582243
 
 
 --ALL VISIT IDS
