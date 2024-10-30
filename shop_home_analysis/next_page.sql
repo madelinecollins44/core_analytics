@@ -118,6 +118,7 @@ order by 2 desc
 
 --next page of visits that have purchased from the shop itself
 --get visit info of when a visit see a shop_home page
+--get visit info of when a visit see a shop_home page
 with visited_shop_ids as (
 select 
   visit_id
@@ -128,7 +129,7 @@ from
   `etsy-visit-pipe-prod.canonical.visit_id_beacons` 
 where 
   beacon.event_name in ('shop_home')
-  and date(_partitiontime) >= current_date-5
+  and date(_partitiontime) >= current_date-30
 )
 --find out viists have purchased from a particular store
 , purchased_from_shops as (
@@ -143,7 +144,7 @@ inner join
 		using (transaction_id)
 left join etsy-data-warehouse-prod.rollups.seller_basics sb
 	on t.seller_user_id=sb.user_id
-where tv.date >= current_date-5
+where tv.date >= current_date-30
 )
 --find visits that have purchased from store, and when they visited the store within that visit 
 , visits_to_home_and_purchase as (
@@ -168,7 +169,7 @@ select
 from 
   etsy-data-warehouse-prod.weblog.events
 where
-  _date >= current_date-5
+  _date >= current_date-30
   and page_view=1 
 )
 --look at the next_page for anyone that views the shop_home page + has purchased from that shop in visit
@@ -179,4 +180,4 @@ select
 from visits_to_home_and_purchase vh
 inner join next_page np using (visit_id, sequence_number)
 group by all
---120446, 376124 
+--120446, 376124
