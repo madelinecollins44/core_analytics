@@ -114,3 +114,45 @@ where
   and v._date >= current_date-30
 group by all 
 order by 2 desc 
+
+
+--next page of visits that have purchased from the shop itself
+--get visit info of when a visit see a shop_home page
+with visited_shop_ids as (
+select 
+  visit_id
+	, sequence_number
+	, (select value from unnest(beacon.properties.key_value) where key = "shop_id") as shop_id
+	, (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id") as shop_shop_id
+from 
+  `etsy-visit-pipe-prod.canonical.visit_id_beacons` 
+where 
+  beacon.event_name in ('shop_home')
+  and date(_partitiontime) >= current_date-5
+)
+--find out viists have purchased from a particular store
+, purchased_from_shops as (
+select
+  tv.visit_id, 
+	t.seller_user_id,
+	cast(sb.shop_id as string) as shop_id
+from 
+  etsy-data-warehouse-prod.transaction_mart.transactions_visits tv
+inner join
+	etsy-data-warehouse-prod.transaction_mart.all_transactions t 
+		using (transaction_id)
+left join etsy-data-warehouse-prod.rollups.seller_basics sb
+	on t.seller_user_id=sb.user_id
+where tv.date >= current_date-5
+)
+--find visits that have purchased from store, and when they visited the store within that visit 
+, visits_to_home_and_purchase as (
+select
+ b.visit_id,
+ b.sequence_number,
+ b.shop_id,
+ count(a.visit_id) as purchases_from_store
+from visited_shop_ids b 
+inner join purchased_from_shops a using (visit_id, shop_id)
+group by all
+)
