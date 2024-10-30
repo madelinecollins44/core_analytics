@@ -17,7 +17,8 @@ where
 )
 select
   next_page,
-  count(distinct visit_id) as visits
+  count(visit_id) as pageviews,
+  count(distinct visit_id) as unique_visits
 from 
   shop_home_visits
 where 
