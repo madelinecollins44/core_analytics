@@ -180,9 +180,10 @@ group by all
 select 
   count(distinct visit_id) as total_visits_with_listing_views,
   count(distinct case when listings_viewed >=1 and event_type in ('shop_home') then visit_id end) as _1_plus_listings_viewed,
+  count(distinct case when listings_viewed >=2 and event_type in ('shop_home') then visit_id end) as _2_plus_listings_viewed,
   count(distinct case when listings_viewed >=5 and event_type in ('shop_home') then visit_id end) as _5_plus_listings_viewed,
   count(distinct case when listings_viewed >=10 and event_type in ('shop_home') then visit_id end) as _10_plus_listings_viewed,
-  count(distinct case when listings_viewed >=20 and event_type in ('shop_home') then visit_id end) as _20_plus_listings_viewed,
+  -- count(distinct case when listings_viewed >=20 and event_type in ('shop_home') then visit_id end) as _20_plus_listings_viewed,
 from 
   listing_views v
 inner join 
