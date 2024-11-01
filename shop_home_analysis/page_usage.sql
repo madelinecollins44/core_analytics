@@ -272,3 +272,16 @@ group by all
 --   count(distinct case when event_name in ('shop_home_dropdown_engagement') then visit_id end) as shop_home_dropdown_engagement,
 -- from page_actions
 
+
+---------------------------------------------------------------------------
+--deeper dive on landings
+---------------------------------------------------------------------------
+select
+  count(distinct case when landing_event in ('shop_home') then visit_id end) as shop_home_landings,
+  count(distinct visit_id) as total_visits,
+  count(distinct case when landing_event in ('shop_home') then visit_id end)/ count(distinct visit_id) as share_of_visits
+from etsy-data-warehouse-prod.weblog.visits  
+where _date >= current_date-30
+-- shop_home_landings	    total_visits	      share_of_visits
+-- 78165051	              1081360060	        0.072284018886364265
+
