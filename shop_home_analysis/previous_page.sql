@@ -220,3 +220,22 @@ where
   and event_type in ('shop_home')
 -- shop_home_pageviews	pageviews_from_landing_visits	share_
 -- 405956651	141133426	0.347656395460805
+
+---what % of total pageviews, shop home pageviews come from each landing page
+with shop_home_landings as (
+select 
+  landing_event, 
+  visit_id
+from etsy-data-warehouse-prod.weblog.visits
+where landing_event in ('shop_home')
+and _date>= current_date-30
+)
+select
+  landing_event,
+  count(e.visit_id) as all_pageviews,
+  count(case when event_type in ('shop_home') then e.visit_id end) as shop_home_pageviews,
+from etsy-data-warehouse-prod.weblog.events e 
+left join shop_home_landings l using (visit_id)
+where 
+  e._date >= current_date-30
+group by all
