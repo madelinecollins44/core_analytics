@@ -185,9 +185,17 @@ inner join previous_page np using (visit_id, sequence_number)
 group by all
 
 ---share of total listing views that are from shop home 
+with shop_home_visits as (
+select distinct
+  visit_id
+from etsy-data-warehouse-prod.weblog.events
+where event_type in ('shop_home')
+and _date>= current_date-30
+)
 select
-  count(listing_id) as total_listing_views,
-  count(case when referring_page_event in ('shop_home') then listing_id end) as shop_home_lv,
-  count(case when referring_page_event in ('shop_home') then listing_id end) / count(listing_id) as share_of_lv
-from etsy-data-warehouse-prod.analytics.listing_views
+  count(distinct case when landing_event in ('shop_home') then visit_id end) as shop_home_landings,
+  count(distinct all_visits.visit_id) as all_visits,
+  count(distinct case when landing_event in ('shop_home') then visit_id end) /  count(distinct all_visits.visit_id) as share
+from shop_home_visits  all_visits 
+inner join etsy-data-warehouse-prod.weblog.visits using (visit_id)
 where _date >= current_date-30
