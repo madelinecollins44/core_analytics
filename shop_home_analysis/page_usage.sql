@@ -276,7 +276,8 @@ group by all
 ---------------------------------------------------------------------------
 --deeper dive on landings
 ---------------------------------------------------------------------------
-select
+--what share of landings are shop_home
+  select
   count(distinct case when landing_event in ('shop_home') then visit_id end) as shop_home_landings,
   count(distinct visit_id) as total_visits,
   count(distinct case when landing_event in ('shop_home') then visit_id end)/ count(distinct visit_id) as share_of_visits
@@ -285,3 +286,15 @@ where _date >= current_date-30
 -- shop_home_landings	    total_visits	      share_of_visits
 -- 78165051	              1081360060	        0.072284018886364265
 
+--how many visits to shop_home are landings
+select
+  count(distinct case when v.landing_event in ('shop_home') then v.visit_id end) as shop_home_landings,
+  count(distinct v.visit_id) as all_visits,
+  count(distinct case when landing_event in ('shop_home') then visit_id end) / count(distinct v.visit_id) as share
+from 
+  etsy-data-warehouse-prod.weblog.visits v
+inner join  
+  etsy-data-warehouse-prod.weblog.events e using (visit_id)
+where 
+  v._date >= current_date-30
+  and e.event_type in ('shop_home')
