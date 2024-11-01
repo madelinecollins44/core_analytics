@@ -199,3 +199,22 @@ select
 from shop_home_visits  all_visits 
 inner join etsy-data-warehouse-prod.weblog.visits using (visit_id)
 where _date >= current_date-30
+
+
+--share of pageviews that are from visits that land on shop_home
+with shop_home_landings as (
+select 
+  visit_id
+from etsy-data-warehouse-prod.weblog.visits
+where landing_event in ('shop_home')
+and _date>= current_date-30
+)
+select
+  count(e.visit_id) as shop_home_pageviews,
+  count(case when l.visit_id is not null then e.visit_id end) as pageviews_from_landing_visits,
+  coalesce(count(case when l.visit_id is not null then e.visit_id end)/ count(e.visit_id) ,0) as share_
+from etsy-data-warehouse-prod.weblog.events e 
+left join shop_home_landings l using (visit_id)
+where 
+  e._date >= current_date-30
+  and event_type in ('shop_home')
