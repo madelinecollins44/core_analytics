@@ -218,3 +218,5 @@ left join shop_home_landings l using (visit_id)
 where 
   e._date >= current_date-30
   and event_type in ('shop_home')
+-- shop_home_pageviews	pageviews_from_landing_visits	share_
+-- 405956651	141133426	0.347656395460805
