@@ -106,7 +106,9 @@ group by all
 
 --how many listings views come from shop home?
 select
-  referring_page_event,
+case when referring_page_event in ('browselistings','search') then 'browselistings / search'
+  else referring_page_event
+  end as referring_page_event,,
   count(listing_id) as listing_views,
   count(case when purchased_after_view > 0 then listing_id end) as purchased_listings,
   count(case when purchased_after_view > 0 then listing_id end)/count(listing_id) as purchase_rate
