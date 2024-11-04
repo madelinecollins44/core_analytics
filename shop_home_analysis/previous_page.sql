@@ -239,3 +239,11 @@ left join shop_home_landings l using (visit_id)
 where 
   e._date >= current_date-30
 group by all
+
+--what % of landings are shop home
+select 
+  landing_event, 
+  count(distinct visit_id) as visits
+from etsy-data-warehouse-prod.weblog.visits
+and _date>= current_date-30
+
