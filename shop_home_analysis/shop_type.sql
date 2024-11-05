@@ -63,7 +63,16 @@ select
   sum(pageviews) as pageviews,
   sum(total_gms) as total_gms,
 from add_in_gms
-where visit_id in ('CF88E1C77CBC436482F77ED5BE67.1730136154040.2')
 group by all 
 )
-select count(shop_id) from visit_level_metrics
+select
+  seller_tier_new,
+  count(distinct a.shop_id) as visited_shops,
+  sum(unique_visits) as total_visits,
+  sum(pageviews) as pageviews,
+  sum(a.total_gms) as total_gms
+from 
+  visit_level_metrics a
+left join 
+  shop_tiers b using (shop_id)
+group by all 
