@@ -19,23 +19,23 @@
 
 with shop_tiers as (
 select
-  vs.shop_id,
+  vs.raw_shop_shop_id,
   sb.seller_tier_new,
   sb.power_shop_status,
   sb.top_shop_status,
   sb.medium_shop_status,
   sb.small_shop_status
 from 
-  (select distinct shop_id from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids) vs
+  (select distinct raw_shop_shop_id from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids) vs
 left join 
   etsy-data-warehouse-prod.rollups.seller_basics sb 
-    on vs.shop_id= cast(sb.shop_id as string)
+    on vs.raw_shop_shop_id= cast(sb.shop_id as string)
 group by all
 )
 --need to get shop_ids to visit level
 , pageviews_per_shop as (
 select
-  shop_id,
+  raw_shop_shop_id,
   visit_id,
   count(sequence_number) as pageviews
 from 
@@ -44,7 +44,7 @@ group by all
 )
 , add_in_gms as (
 select
-  a.shop_id,
+  a.raw_shop_shop_id,
   a.visit_id,
   a.pageviews,
   sum(b.total_gms) as total_gms
@@ -58,7 +58,7 @@ group by all
 )
 , visit_level_metrics as (
 select
-  shop_id,
+  raw_shop_shop_id,
   count(distinct visit_id) as unique_visits,
   sum(pageviews) as pageviews,
   sum(total_gms) as total_gms,
@@ -67,41 +67,12 @@ group by all
 )
 select
   seller_tier_new,
-  count(distinct a.shop_id) as visited_shops,
+  count(distinct a.raw_shop_shop_id) as visited_shops,
   sum(unique_visits) as total_visits,
   sum(pageviews) as pageviews,
   sum(a.total_gms) as total_gms
 from 
   visit_level_metrics a
 left join 
-  shop_tiers b using (shop_id)
+  shop_tiers b using (raw_shop_shop_id)
 group by all 
-
-------------------------------
---check
-------------------------------
---make sure # of pageviews is consistent
-  -----weblog.events
-select 
-  count(visit_id)
-from etsy-data-warehouse-prod.weblog.events
-where event_type in ('shop_home')
-and _date >= current_date-30
---404859200
-
------from shop home calc
-, agg as (
-select
-  seller_tier_new,
-  count(distinct a.shop_id) as visited_shops,
-  sum(unique_visits) as total_visits,
-  sum(pageviews) as pageviews,
-  sum(a.total_gms) as total_gms
-from 
-  visit_level_metrics a
-left join 
-  shop_tiers b using (shop_id)
-group by all 
-)
-select sum(pageviews) from agg
---404859200
