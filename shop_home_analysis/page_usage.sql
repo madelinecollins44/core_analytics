@@ -303,3 +303,61 @@ where
 ---------------------------------------------------------------------------
 --overall traffic by shop type, landing traffic by shop type
 ---------------------------------------------------------------------------
+--overall traffic 
+--find all visits to shop
+-- create or replace table etsy-data-warehouse-dev.madelinecollins.visited_shop_ids as (
+-- select 
+-- 	(select value from unnest(beacon.properties.key_value) where key = "shop_id") as shop_id,
+--   visit_id,
+--   sequence_number
+-- from 
+--   `etsy-visit-pipe-prod.canonical.visit_id_beacons` 
+-- where 
+--   beacon.event_name in ('shop_home')
+--   and date(_partitiontime) >= current_date-30
+-- );
+
+with shop_tiers as (
+select
+  vs.shop_id,
+  sb.seller_tier,
+  sb.sws_status,
+  sb.high_potential_seller_status,
+  sb.top_seller_status,
+  sb.power_seller_status
+from 
+  (select distinct shop_id from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids) vs
+left join 
+  etsy-data-warehouse-prod.rollups.seller_basics sb 
+    on vs.shop_id= cast(sb.shop_id as string)
+group by all
+)
+, add_in_gms as (
+select
+  a.shop_id,
+  a.visit_id,
+  sum(total_gms) as total_gms
+from 
+  (select distinct visit_id from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids) a
+inner join 
+  etsy-data-warehouse-prod.weblog.visits using (visit_id)
+where 
+  _date >= current_date-30
+group by all 
+)
+, visit_info as (
+select
+  shop_id,
+  count(distinct visit_id) as visits,
+  sum(total_gms) as total_gms
+from add_in_gms
+)
+select
+  seller_tier,
+  count(distinct a.shop_id) as visited_shops,
+  count(distinct a.visit_id) as visits,
+  sum(total_gms) as total_gms
+from visit_info
+left join shop_tiers b 
+  using (shop_id)
+group by all 
