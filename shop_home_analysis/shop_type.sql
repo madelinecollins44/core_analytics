@@ -76,3 +76,32 @@ from
 left join 
   shop_tiers b using (shop_id)
 group by all 
+
+------------------------------
+--check
+------------------------------
+--make sure # of pageviews is consistent
+  -----weblog.events
+select 
+  count(visit_id)
+from etsy-data-warehouse-prod.weblog.events
+where event_type in ('shop_home')
+and _date >= current_date-30
+--404859200
+
+-----from shop home calc
+, agg as (
+select
+  seller_tier_new,
+  count(distinct a.shop_id) as visited_shops,
+  sum(unique_visits) as total_visits,
+  sum(pageviews) as pageviews,
+  sum(a.total_gms) as total_gms
+from 
+  visit_level_metrics a
+left join 
+  shop_tiers b using (shop_id)
+group by all 
+)
+select sum(pageviews) from agg
+--404859200
