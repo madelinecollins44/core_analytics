@@ -303,7 +303,6 @@ where
 ---------------------------------------------------------------------------
 --overall traffic by shop type, landing traffic by shop type
 ---------------------------------------------------------------------------
---overall traffic 
 --find all visits to shop
 -- create or replace table etsy-data-warehouse-dev.madelinecollins.visited_shop_ids as (
 -- select 
@@ -369,3 +368,19 @@ from add_in_gms
 group by all 
 -- )
 
+--CHECK 
+  -- select visit_id, count(shop_id) from add_in_gms group by all order by 2 asc
+--WbtCZohzj0J0UQyL7edwRCocHcLW.1728986489452.2, 1888
+--ucXKOuI4maSrH2MO6Pz3vWJoQLkl.1729506369635.2, 1883
+-- CF88E1C77CBC436482F77ED5BE67.1730136154040.2, 0
+
+--   , visit_level_metrics as (
+-- select
+--   shop_id,
+--   count(distinct visit_id) as unique_visits,
+--   sum(pageviews) as pageviews,
+--   sum(total_gms) as total_gms,
+-- from add_in_gms
+-- where visit_id in ('ucXKOuI4maSrH2MO6Pz3vWJoQLkl.1729506369635.2,')
+-- group by all 
+)
