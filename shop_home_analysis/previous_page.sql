@@ -87,46 +87,14 @@ group by all
 --looking at visits that have purchased from that shop
 ---------------------------------------------------------------
 --find visit_ids, shop_ids, sequence number
-with visited_shop_ids as (
-select
-  visit_id
-	, sequence_number
-	, (select value from unnest(beacon.properties.key_value) where key = "shop_id") as shop_id
-	, (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id") as shop_shop_id
-from 
-  `etsy-visit-pipe-prod.canonical.visit_id_beacons` 
-where 
-  beacon.event_name in ('shop_home')
-  and date(_partitiontime) >= current_date-30
-)
-, purchased_from_shops as (
-select
-  tv.visit_id, 
-	t.seller_user_id,
-	cast(sb.shop_id as string) as shop_id
-	--shop_id here 
-from 
-  etsy-data-warehouse-prod.transaction_mart.transactions_visits tv
-inner join
-	etsy-data-warehouse-prod.transaction_mart.all_transactions t 
-		using (transaction_id)
-left join etsy-data-warehouse-prod.rollups.seller_basics sb
-	on t.seller_user_id=sb.user_id
-)
--- how many visitors have actually purchased on the shop 
-select
-  count(distinct a.visit_id) as shop_purchasers,
-  count(distinct b.visit_id) as purchasers_that_have_visited
-from purchased_from_shops a
-left join visited_shop_ids b using (visit_id, shop_id)
-
 --get visit info of when a visit see a shop_home page, previous page
 with visited_shop_ids as (
 select 
   visit_id
 	, sequence_number
-	, (select value from unnest(beacon.properties.key_value) where key = "shop_id") as shop_id
-	, (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id") as shop_shop_id
+	, (select value from unnest(beacon.properties.key_value) where key = "shop_id") as raw_shop_id
+	, (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id") as raw_shop_shop_id
+  ,  coalesce((select value from unnest(beacon.properties.key_value) where key = "shop_id") , (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id")) as shop_id,
 from 
   `etsy-visit-pipe-prod.canonical.visit_id_beacons` 
 where 
