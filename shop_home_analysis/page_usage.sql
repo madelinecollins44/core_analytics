@@ -331,33 +331,41 @@ left join
   etsy-data-warehouse-prod.rollups.seller_basics sb 
     on vs.shop_id= cast(sb.shop_id as string)
 group by all
+--need to get shop_ids to visit level
+with pageviews_per_shop as (
+select
+  shop_id,
+  visit_id,
+  count(sequence_number) as pageviews
+from 
+  etsy-data-warehouse-dev.madelinecollins.visited_shop_ids
+group by all
 )
 , add_in_gms as (
 select
   a.shop_id,
   a.visit_id,
-  sum(total_gms) as total_gms
+  a.pageviews,
+  sum(b.total_gms) as total_gms
 from 
-  (select distinct visit_id from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids) a
+  pageviews_per_shop a
 inner join 
-  etsy-data-warehouse-prod.weblog.visits using (visit_id)
+  etsy-data-warehouse-prod.weblog.visits b using (visit_id)
 where 
   _date >= current_date-30
 group by all 
 )
-, visit_info as (
+select visit_id, count(shop_id) from add_in_gms group by all order by 2 desc
+--WbtCZohzj0J0UQyL7edwRCocHcLW.1728986489452.2, 1888
+--ucXKOuI4maSrH2MO6Pz3vWJoQLkl.1729506369635.2, 1883
+
+-- , visit_level_metrics as (
 select
   shop_id,
-  count(distinct visit_id) as visits,
-  sum(total_gms) as total_gms
+  count(distinct visit_id) as unique_visits,
+  sum(pageviews) as pageviews,
+  sum(total_gms) as total_gms,
 from add_in_gms
-)
-select
-  seller_tier,
-  count(distinct a.shop_id) as visited_shops,
-  count(distinct a.visit_id) as visits,
-  sum(total_gms) as total_gms
-from visit_info
-left join shop_tiers b 
-  using (shop_id)
 group by all 
+-- )
+
