@@ -298,3 +298,8 @@ inner join
 where 
   v._date >= current_date-30
   and e.event_type in ('shop_home')
+
+
+---------------------------------------------------------------------------
+--overall traffic by shop type, landing traffic by shop type
+---------------------------------------------------------------------------
