@@ -153,8 +153,9 @@ with visited_shop_ids as (
 select 
   visit_id
 	, sequence_number
-	, (select value from unnest(beacon.properties.key_value) where key = "shop_id") as shop_id
-	, (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id") as shop_shop_id
+	, (select value from unnest(beacon.properties.key_value) where key = "shop_id") as raw_shop_id
+	, (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id") as raw_shop_shop_id
+  ,  coalesce((select value from unnest(beacon.properties.key_value) where key = "shop_id") , (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id")) as shop_id,
 from 
   `etsy-visit-pipe-prod.canonical.visit_id_beacons` 
 where 
