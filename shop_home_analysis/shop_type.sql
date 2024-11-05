@@ -19,20 +19,23 @@
 
 
 
-with shop_tiers as (
-select
-  vs.shop_id,
-  sb.seller_tier,
-  sb.sws_status,
-  sb.high_potential_seller_status,
-  sb.top_seller_status,
-  sb.power_seller_status
-from 
-  (select distinct shop_id from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids) vs
-left join 
-  etsy-data-warehouse-prod.rollups.seller_basics sb 
-    on vs.shop_id= cast(sb.shop_id as string)
-group by all
+-- with shop_tiers as (
+-- select
+--   vs.shop_id,
+--   sb.seller_tier,
+--   sb.sws_status,
+--   sb.high_potential_seller_status,
+--   sb.top_seller_status,
+--   sb.power_seller_status
+-- from 
+--   (select distinct shop_id from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids) vs
+-- left join 
+--   etsy-data-warehouse-prod.rollups.seller_basics sb 
+--     on vs.shop_id= cast(sb.shop_id as string)
+-- group by all
+-- )
+
+--need to get shop_ids to visit level
 --need to get shop_ids to visit level
 with pageviews_per_shop as (
 select
@@ -43,6 +46,8 @@ from
   etsy-data-warehouse-dev.madelinecollins.visited_shop_ids
 group by all
 )
+
+SELECT * FROM etsy-data-warehouse-dev.madelinecollins.visited_shop_ids WHERE VISIT_ID IN ('CF88E1C77CBC436482F77ED5BE67.1730136154040.2')
 , add_in_gms as (
 select
   a.shop_id,
@@ -57,33 +62,19 @@ where
   _date >= current_date-30
 group by all 
 )
-select visit_id, count(shop_id) from add_in_gms group by all order by 2 desc
+-- select visit_id, count(shop_id) from add_in_gms group by all order by 2 asc
 --WbtCZohzj0J0UQyL7edwRCocHcLW.1728986489452.2, 1888
 --ucXKOuI4maSrH2MO6Pz3vWJoQLkl.1729506369635.2, 1883
+-- CF88E1C77CBC436482F77ED5BE67.1730136154040.2, 0
 
--- , visit_level_metrics as (
+, visit_level_metrics as (
 select
   shop_id,
   count(distinct visit_id) as unique_visits,
   sum(pageviews) as pageviews,
   sum(total_gms) as total_gms,
 from add_in_gms
+where visit_id in ('CF88E1C77CBC436482F77ED5BE67.1730136154040.2')
 group by all 
--- )
-
---CHECK 
-  -- select visit_id, count(shop_id) from add_in_gms group by all order by 2 asc
---WbtCZohzj0J0UQyL7edwRCocHcLW.1728986489452.2, 1888
---ucXKOuI4maSrH2MO6Pz3vWJoQLkl.1729506369635.2, 1883
--- CF88E1C77CBC436482F77ED5BE67.1730136154040.2, 0
-
---   , visit_level_metrics as (
--- select
---   shop_id,
---   count(distinct visit_id) as unique_visits,
---   sum(pageviews) as pageviews,
---   sum(total_gms) as total_gms,
--- from add_in_gms
--- where visit_id in ('ucXKOuI4maSrH2MO6Pz3vWJoQLkl.1729506369635.2,')
--- group by all 
 )
+select count(shop_id) from visit_level_metrics
