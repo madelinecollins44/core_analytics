@@ -175,17 +175,16 @@ left join etsy-data-warehouse-prod.rollups.seller_basics sb
 where tv.date >= current_date-30
 group by all 
 )
---find visits that have purchased from store, and when they visited the store within that visit 
 , visits_to_home_and_purchase as (
 select
  b.visit_id,
  b.sequence_number, -- need this so can join to next page
- b.raw_shop_shop_id,
- a.transactions
-from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids b 
-inner join purchased_from_shops a 
-	on b.visit_id=a.visit_id
-	and b.raw_shop_shop_id=a.shop_id
+ b.shop_id,
+ case when a.transactions is not null then 1 else 0 end as transactions
+from 
+  etsy-data-warehouse-dev.madelinecollins.visited_shop_ids b 
+left join 
+  purchased_from_shops a using (visit_id, shop_id)
 group by all
 )
 ,  next_page as (
@@ -209,7 +208,6 @@ select
 from visits_to_home_and_purchase vh
 inner join next_page np using (visit_id, sequence_number)
 group by all
-
 ---------------------------------------------------------------------------------------------------------------------------------------------
 --testing of purchase  visit
 ---------------------------------------------------------------------------------------------------------------------------------------------
