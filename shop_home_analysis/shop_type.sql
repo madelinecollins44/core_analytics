@@ -2,12 +2,11 @@
 ---------------------------------------------------------------------------
 --overall traffic by shop type, landing traffic by shop type
 ---------------------------------------------------------------------------
---find shop types 
+-- find shop types 
 -- create or replace table etsy-data-warehouse-dev.madelinecollins.visited_shop_ids as (
 -- select 
--- 	(select value from unnest(beacon.properties.key_value) where key = "shop_id") as raw_shop_id,
--- 	(select value from unnest(beacon.properties.key_value) where key = "shop_shop_id") as raw_shop_shop_id,
---   coalesce((select value from unnest(beacon.properties.key_value) where key = "shop_id") , (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id")) as shop_id,
+-- 	(select value from unnest(beacon.properties.key_value) where key = "shop_id") as seller_user_id,
+-- 	(select value from unnest(beacon.properties.key_value) where key = "shop_shop_id") as shop_id,
 --   visit_id,
 --   sequence_number
 -- from 
@@ -16,6 +15,7 @@
 --   beacon.event_name in ('shop_home')
 --   and date(_partitiontime) >= current_date-30
 -- );
+
 
 with shop_tiers as (
 select
