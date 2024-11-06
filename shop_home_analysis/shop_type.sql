@@ -1,7 +1,7 @@
 
----------------------------------------------------------------------------
---overall traffic by shop type, landing traffic by shop type
----------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------
+--test this table to see how many seller_user_ids, shop_ids are not in seller_basics table
+------------------------------------------------------------------------------------------------------------------------------------------------------
 -- find shop types 
 -- create or replace table etsy-data-warehouse-dev.madelinecollins.visited_shop_ids as (
 -- select 
@@ -16,7 +16,9 @@
 --   and date(_partitiontime) >= current_date-30
 -- );
 
-
+---------------------------------------------------------------------------
+--overall traffic by shop type, landing traffic by shop type
+---------------------------------------------------------------------------
 with shop_tiers as (
 select
   vs.raw_shop_shop_id,
