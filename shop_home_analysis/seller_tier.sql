@@ -2,6 +2,9 @@
 ---------------------------------------------------------------------------
 --overall traffic by shop type, landing traffic by shop type
 ---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+--overall traffic by shop type, landing traffic by shop type
+---------------------------------------------------------------------------
 with shop_tiers as (
 select
   vs.shop_id,
@@ -18,11 +21,7 @@ left join
 group by all
 )
 -- 7069431 shop_ids, 710219 shop_ids without tiers, 10.04% without a match  
-
-
---need to get shop_ids to visit level
-, 
-with pageviews_per_shop as (
+, pageviews_per_shop as (
 select
   shop_id,
   visit_id,
@@ -47,6 +46,7 @@ where
 group by all 
 )
 -- 7050278 shop_ids, 152877206 visits 
+-----why are visits being dropped here? 
 , visit_level_metrics as (
 select
   shop_id,
@@ -56,9 +56,7 @@ select
 from add_in_gms
 group by all 
 )
-select count(distinct shop_id), count(distinct visit_id) from add_in_gms group by all 
-
-, agg as (select
+select
   seller_tier_new,
   count(distinct a.shop_id) as visited_shops,
   sum(unique_visits) as total_visits,
@@ -69,10 +67,7 @@ from
 left join 
   shop_tiers b using (shop_id)
 group by all 
-)
-select sum(visited_shops) from agg
---7050278
---
+
 ----------------------------------------------------------------
 --by reporting channel
 ----------------------------------------------------------------
