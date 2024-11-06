@@ -180,10 +180,10 @@ select
  b.visit_id,
  b.sequence_number, -- need this so can join to next page
  b.shop_id,
- case when a.transactions is not null then 1 else 0 end as transactions
+ a.transactions
 from 
   etsy-data-warehouse-dev.madelinecollins.visited_shop_ids b 
-left join 
+inner join 
   purchased_from_shops a using (visit_id, shop_id)
 group by all
 )
@@ -202,7 +202,7 @@ where
 --look at the next_page for anyone that views the shop_home page + has purchased from that shop in visit
 select 
 	np.next_page,
-	np.event_type,
+	-- np.event_type,
 	count(vh.visit_id) as pageviews,
 	count(distinct vh.visit_id) as unique_visits
 from visits_to_home_and_purchase vh
