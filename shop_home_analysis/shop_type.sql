@@ -16,6 +16,30 @@
 --   and date(_partitiontime) >= current_date-30
 -- );
 
+--testing seller user ids
+select
+  count(distinct vsi.seller_user_id) as beacons_properties,
+  count(distinct sb.user_id) as seller_basics,
+  count(distinct case when sb.user_id is null then vsi.seller_user_id end) as beacons_without_match
+from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids vsi 
+left join etsy-data-warehouse-prod.rollups.seller_basics sb
+  on vsi.seller_user_id=cast(sb.user_id as string)
+group by all
+-- beacons_properties	    seller_basics	          beacons_without_match
+-- 7519878	              6388219	                  1131659
+
+--testing shop ids
+select
+  count(distinct vsi.shop_id) as beacons_properties,
+  count(distinct sb.shop_id) as seller_basics,
+  count(distinct case when sb.shop_id is null then vsi.shop_id end) as beacons_without_match
+from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids vsi 
+left join etsy-data-warehouse-prod.rollups.seller_basics sb
+  on vsi.shop_id=cast(sb.shop_id as string)
+group by all
+--  beacons_properties	    seller_basics	        beacons_without_match
+-- 7069431	                  6359212	             710219
+  
 ---------------------------------------------------------------------------
 --overall traffic by shop type, landing traffic by shop type
 ---------------------------------------------------------------------------
