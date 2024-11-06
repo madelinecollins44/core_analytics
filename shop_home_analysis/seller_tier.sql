@@ -2,25 +2,31 @@
 ---------------------------------------------------------------------------
 --overall traffic by shop type, landing traffic by shop type
 ---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+--overall traffic by shop type, landing traffic by shop type
+---------------------------------------------------------------------------
 with shop_tiers as (
 select
-  vs.raw_shop_shop_id,
+  vs.shop_id,
   sb.seller_tier_new,
   sb.power_shop_status,
   sb.top_shop_status,
   sb.medium_shop_status,
   sb.small_shop_status
 from 
-  (select distinct raw_shop_shop_id from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids) vs
+  (select distinct shop_id from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids) vs
 left join 
   etsy-data-warehouse-prod.rollups.seller_basics sb 
-    on vs.raw_shop_shop_id= cast(sb.shop_id as string)
+    on vs.shop_id= cast(sb.shop_id as string)
 group by all
 )
+-- 7069431 shop_ids, 710219 shop_ids without tiers, 10.04% without a match  
+
+
 --need to get shop_ids to visit level
 , pageviews_per_shop as (
 select
-  raw_shop_shop_id,
+  shop_id,
   visit_id,
   count(sequence_number) as pageviews
 from 
@@ -29,7 +35,7 @@ group by all
 )
 , add_in_gms as (
 select
-  a.raw_shop_shop_id,
+  a.shop_id,
   a.visit_id,
   a.pageviews,
   sum(b.total_gms) as total_gms
@@ -43,7 +49,7 @@ group by all
 )
 , visit_level_metrics as (
 select
-  raw_shop_shop_id,
+  shop_id,
   count(distinct visit_id) as unique_visits,
   sum(pageviews) as pageviews,
   sum(total_gms) as total_gms,
@@ -52,15 +58,16 @@ group by all
 )
 select
   seller_tier_new,
-  count(distinct a.raw_shop_shop_id) as visited_shops,
+  count(distinct a.shop_id) as visited_shops,
   sum(unique_visits) as total_visits,
   sum(pageviews) as pageviews,
   sum(a.total_gms) as total_gms
 from 
   visit_level_metrics a
 left join 
-  shop_tiers b using (raw_shop_shop_id)
+  shop_tiers b using (shop_id)
 group by all 
+
 
 
 ----------------------------------------------------------------
