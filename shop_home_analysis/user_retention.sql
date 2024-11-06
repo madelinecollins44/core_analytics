@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------------------------
 --how often are all users revisiting the shop_home page? 
 --------------------------------------------------------------------------------------------------
+with users_and_visits as (
 select
   u.mapped_user_id,
   e._date,
@@ -12,4 +13,10 @@ left join
   `etsy-data-warehouse-prod.user_mart.user_mapping` u using (user_id)
 where event_type in ('shop_home')
 group by all 
-order by 4 desc
+)
+select 
+  days_to_next_visit,
+  count(distinct mapped_user_id) as users
+from users_and_visits
+group by all 
+order by 1 desc
