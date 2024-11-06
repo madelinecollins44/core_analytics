@@ -149,25 +149,12 @@ order by 2 desc
 
 --next page of visits that have purchased from the shop itself
 --get visit info of when a visit see a shop_home page
-with visited_shop_ids as (
-select 
-  visit_id
-	, sequence_number
-	, (select value from unnest(beacon.properties.key_value) where key = "shop_id") as raw_shop_id
-	, (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id") as raw_shop_shop_id
-  ,  coalesce((select value from unnest(beacon.properties.key_value) where key = "shop_id") , (select value from unnest(beacon.properties.key_value) where key = "shop_shop_id")) as shop_id,
-from 
-  `etsy-visit-pipe-prod.canonical.visit_id_beacons` 
-where 
-  beacon.event_name in ('shop_home')
-  and date(_partitiontime) >= current_date-30
-)
---find out viists have purchased from a particular store
-, purchased_from_shops as (
+with purchased_from_shops as (
 select
   tv.visit_id, 
 	t.seller_user_id,
-	cast(sb.shop_id as string) as shop_id
+	cast(sb.shop_id as string) as shop_id,
+  count(transaction_id) as transactions
 from 
   etsy-data-warehouse-prod.transaction_mart.transactions_visits tv
 inner join
@@ -176,21 +163,21 @@ inner join
 left join etsy-data-warehouse-prod.rollups.seller_basics sb
 	on t.seller_user_id=sb.user_id
 where tv.date >= current_date-30
+group by all 
 )
 --find visits that have purchased from store, and when they visited the store within that visit 
 , visits_to_home_and_purchase as (
 select
  b.visit_id,
- b.sequence_number,
- b.shop_id,
- count(a.visit_id) as purchases_from_store
-from visited_shop_ids b 
-inner join purchased_from_shops a using (visit_id, shop_id)
+ b.sequence_number, -- need this so can join to next page
+ b.raw_shop_shop_id,
+ a.transactions
+from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids b 
+inner join purchased_from_shops a 
+	on b.visit_id=a.visit_id
+	and b.raw_shop_shop_id=a.shop_id
 group by all
 )
--- select count(visit_id) from visits_to_home_and_purchase
---120446 unique visit_ids have seen the shop_home page. 376124 visits to home from users that have seen the shop_home and bought something. 
---get next page info 
 ,  next_page as (
 select
   visit_id,
@@ -206,10 +193,10 @@ where
 --look at the next_page for anyone that views the shop_home page + has purchased from that shop in visit
 select 
 	np.next_page,
-	-- np.event_type
+	np.event_type,
 	count(vh.visit_id) as pageviews,
 	count(distinct vh.visit_id) as unique_visits
 from visits_to_home_and_purchase vh
 inner join next_page np using (visit_id, sequence_number)
 group by all
---120446, 376124
+
