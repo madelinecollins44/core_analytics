@@ -20,29 +20,35 @@
 select
   count(distinct vsi.seller_user_id) as beacons_properties,
   count(distinct sb.user_id) as seller_basics,
-  count(distinct case when sb.user_id is null then vsi.seller_user_id end) as beacons_without_match
-from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids vsi 
-left join etsy-data-warehouse-prod.rollups.seller_basics sb
-  on vsi.seller_user_id=cast(sb.user_id as string)
+  count(distinct case when sb.user_id is null then vsi.seller_user_id end) as beacons_without_match,
+  count(distinct sb.user_id) / count(distinct vsi.seller_user_id) as share_with_match, 
+  count(distinct case when sb.user_id is null then vsi.seller_user_id end)/ count(distinct vsi.seller_user_id) as share_without_match
+from 
+  etsy-data-warehouse-dev.madelinecollins.visited_shop_ids vsi 
+left join 
+  etsy-data-warehouse-prod.rollups.seller_basics sb
+    on vsi.seller_user_id=cast(sb.user_id as string)
 group by all
--- beacons_properties	    seller_basics	          beacons_without_match
--- 7519878	              6388219	                  1131659
+-- beacons_properties	    seller_basics	    beacons_without_match	    share_with_match	      share_without_match
+-- 7519878	              6388219	          1131659	                  0.849510989407009	       0.150489010592991
 
 ------testing shop ids
 select
   count(distinct vsi.shop_id) as beacons_properties,
   count(distinct sb.shop_id) as seller_basics,
-  count(distinct case when sb.shop_id is null then vsi.shop_id end) as beacons_without_match
-from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids vsi 
-left join etsy-data-warehouse-prod.rollups.seller_basics sb
-  on vsi.shop_id=cast(sb.shop_id as string)
+  count(distinct case when sb.shop_id is null then vsi.shop_id end) as beacons_without_match,
+  count(distinct sb.shop_id) / count(distinct vsi.shop_id) as share_with_match, 
+  count(distinct case when sb.shop_id is null then vsi.shop_id end)/ count(distinct vsi.shop_id) as share_without_match
+from 
+  etsy-data-warehouse-dev.madelinecollins.visited_shop_ids vsi 
+left join 
+  etsy-data-warehouse-prod.rollups.seller_basics sb
+    on vsi.shop_id=cast(sb.shop_id as string)
 group by all
---  beacons_properties	    seller_basics	        beacons_without_match
--- 7069431	                  6359212	             710219
+-- beacons_properties	      seller_basics	      beacons_without_match	      share_with_match	      share_without_match
+-- 7069431	                6359212	            710219	                    0.89953661051363254	     0.10046338948636743
 
-------testing to see quality of each event
---testing shop ids
---testing shop ids
+------testing to see quality of shop home event
 select
   count(case when seller_user_id is not null and shop_id is null then visit_id end) as missing_shop_ids,
   count(case when shop_id is not null and seller_user_id is null then visit_id end) as missing_seller_user_ids,
