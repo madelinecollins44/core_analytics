@@ -24,7 +24,8 @@ group by all
 
 
 --need to get shop_ids to visit level
-, pageviews_per_shop as (
+, 
+with pageviews_per_shop as (
 select
   shop_id,
   visit_id,
@@ -33,6 +34,7 @@ from
   etsy-data-warehouse-dev.madelinecollins.visited_shop_ids
 group by all
 )
+-- 7069431 shop_ids, 155315719 visits 
 , add_in_gms as (
 select
   a.shop_id,
@@ -47,6 +49,7 @@ where
   _date >= current_date-30
 group by all 
 )
+-- 7050278 shop_ids, 152877206 visits 
 , visit_level_metrics as (
 select
   shop_id,
@@ -56,7 +59,9 @@ select
 from add_in_gms
 group by all 
 )
-select
+select count(distinct shop_id), count(distinct visit_id) from add_in_gms group by all 
+
+, agg as (select
   seller_tier_new,
   count(distinct a.shop_id) as visited_shops,
   sum(unique_visits) as total_visits,
@@ -67,9 +72,10 @@ from
 left join 
   shop_tiers b using (shop_id)
 group by all 
-
-
-
+)
+select sum(visited_shops) from agg
+--7050278
+--
 ----------------------------------------------------------------
 --by reporting channel
 ----------------------------------------------------------------
