@@ -20,3 +20,5 @@ select
 from users_and_visits
 group by all 
 order by 1 desc
+
+---testing
