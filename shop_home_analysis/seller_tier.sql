@@ -81,32 +81,33 @@ select sum(visited_shops) from agg
 ----------------------------------------------------------------
 with shop_tiers as (
 select
-  vs.raw_shop_shop_id,
+  vs.shop_id,
   sb.seller_tier_new,
   sb.power_shop_status,
   sb.top_shop_status,
   sb.medium_shop_status,
   sb.small_shop_status
 from 
-  (select distinct raw_shop_shop_id from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids) vs
+  (select distinct shop_id from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids) vs
 left join 
   etsy-data-warehouse-prod.rollups.seller_basics sb 
-    on vs.raw_shop_shop_id= cast(sb.shop_id as string)
+    on vs.shop_id= cast(sb.shop_id as string)
 group by all
 )
---need to get shop_ids to visit level
+-- 7069431 shop_ids, 710219 shop_ids without tiers, 10.04% without a match  
 , pageviews_per_shop as (
 select
-  raw_shop_shop_id,
+  shop_id,
   visit_id,
   count(sequence_number) as pageviews
 from 
   etsy-data-warehouse-dev.madelinecollins.visited_shop_ids
 group by all
 )
+-- 7069431 shop_ids, 155315719 visits 
 , add_in_gms as (
 select
-case 
+ case 
       when top_channel in ('direct') then 'Direct'
       when top_channel in ('dark') then 'Dark'
       when top_channel in ('internal') then 'Internal'
@@ -125,10 +126,11 @@ case
       when second_channel like '%native_display' then 'Display'
       when second_channel in ('us_video','intl_video') then 'Video' else 'Other Paid' end
       else 'Other Non-Paid' 
-      end as reporting_channel,
-  a.raw_shop_shop_id,
+      end as reporting_channel, 
+  a.shop_id,
   a.visit_id,
   a.pageviews,
+  -- case when b.visit_id is null then 1 else 0 end as ordered,
   sum(b.total_gms) as total_gms
 from 
   pageviews_per_shop a
@@ -138,10 +140,11 @@ where
   _date >= current_date-30
 group by all 
 )
+-- 7050278 shop_ids, 152877206 visits 
 , visit_level_metrics as (
 select
   reporting_channel,
-  raw_shop_shop_id,
+  shop_id,
   count(distinct visit_id) as unique_visits,
   sum(pageviews) as pageviews,
   sum(total_gms) as total_gms,
@@ -150,13 +153,13 @@ group by all
 )
 select
   reporting_channel,
-  seller_tier_new,
-  count(distinct a.raw_shop_shop_id) as visited_shops,
+  case when seller_tier_new is null then "null" else seller_tier_new end as seller_tier_new,
+  count(distinct a.shop_id) as visited_shops,
   sum(unique_visits) as total_visits,
   sum(pageviews) as pageviews,
   sum(a.total_gms) as total_gms
 from 
   visit_level_metrics a
 left join 
-  shop_tiers b using (raw_shop_shop_id)
+  shop_tiers b using (shop_id)
 group by all 
