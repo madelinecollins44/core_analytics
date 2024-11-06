@@ -16,7 +16,7 @@
 --   and date(_partitiontime) >= current_date-30
 -- );
 
---testing seller user ids
+------testing seller user ids
 select
   count(distinct vsi.seller_user_id) as beacons_properties,
   count(distinct sb.user_id) as seller_basics,
@@ -28,7 +28,7 @@ group by all
 -- beacons_properties	    seller_basics	          beacons_without_match
 -- 7519878	              6388219	                  1131659
 
---testing shop ids
+------testing shop ids
 select
   count(distinct vsi.shop_id) as beacons_properties,
   count(distinct sb.shop_id) as seller_basics,
@@ -39,6 +39,25 @@ left join etsy-data-warehouse-prod.rollups.seller_basics sb
 group by all
 --  beacons_properties	    seller_basics	        beacons_without_match
 -- 7069431	                  6359212	             710219
+
+------testing to see quality of each event
+--testing shop ids
+--testing shop ids
+select
+  count(case when seller_user_id is not null and shop_id is null then visit_id end) as missing_shop_ids,
+  count(case when shop_id is not null and seller_user_id is null then visit_id end) as missing_seller_user_ids,
+  count(case when seller_user_id is not null and shop_id is not null then visit_id end) as has_both,
+  count(case when seller_user_id is null and shop_id is null then visit_id end) as missing_both,
+  count(visit_id) as total_shop_home_visits,
+--shares 
+  count(case when seller_user_id is not null and shop_id is null then visit_id end)/ count(visit_id) as share_missing_shop_ids,
+  count(case when shop_id is not null and seller_user_id is null then visit_id end)/ count(visit_id) as share_missing_seller_user_ids,
+  count(case when seller_user_id is not null and shop_id is not null then visit_id end)/count(visit_id) as share_has_both,
+  count(case when seller_user_id is null and shop_id is null then visit_id end)/ count(visit_id) as share_missing_both
+from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids vsi 
+group by all
+-- missing_shop_ids	    missing_seller_user_ids	    has_both	    missing_both	    total_shop_home_visits	    share_missing_shop_ids	    share_missing_seller_user_ids	      share_has_both	      share_missing_both
+-- 45967984	            116739391	                   241324433	   5128256	        409160064	                    0.11234719134270152	        0.28531472465504354	            0.58980446586302226	      0.01253361813923267
   
 ---------------------------------------------------------------------------
 --overall traffic by shop type, landing traffic by shop type
