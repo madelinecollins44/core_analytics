@@ -7,14 +7,19 @@ with users_and_visits as (
 select
   u.mapped_user_id,
   e._date,
-  lag(e._date) over (partition by mapped_user_id order by _date) as last_visit_id,
-  date_diff(e._date, lag(e._date) over (partition by mapped_user_id order by _date), day) as days_since_last_visit
+  lag(e._date) over (partition by mapped_user_id order by e._date) as last_visit_id,
+  date_diff(e._date, lag(e._date) over (partition by mapped_user_id order by e._date), day) as days_since_last_visit
 from 
-  etsy-data-warehouse-prod.weblog.events e
+  (select * from etsy-data-warehouse-prod.weblog.events where event_type in ('shop_home')) e
+inner join 
+  etsy-data-warehouse-prod.weblog.visits v using (visit_id)
 left join 
-  `etsy-data-warehouse-prod.user_mart.user_mapping` u using (user_id)
+  `etsy-data-warehouse-prod.user_mart.user_mapping` u 
+    on e.user_id=u.user_id -- use user_id when 
 where 
   event_type in ('shop_home')
+  -- and v.landing_event in ('shop_home')
+  and v._date >= current_date-30
 group by all 
 )
 select 
@@ -23,8 +28,6 @@ select
   count(mapped_user_id) as users,
 from 
   users_and_visits 
--- where 
---   mapped_user_id is not null -- am
 group by all 
 order by 1 asc
 
@@ -56,7 +59,7 @@ select * from users_and_visits where days_to_next_visit < 7 limit 5
 -- 4198	2024-10-16	2024-10-15	1
 -- 2470	2024-10-24	2024-10-18	6
 
----testing users with null days between visits 
+---testing users with null days between visits : these users have no previous shop home visit
 with users_and_visits as (
 select
   u.mapped_user_id,
