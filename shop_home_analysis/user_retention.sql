@@ -22,7 +22,7 @@ from users_and_visits
 group by all 
 order by 1 asc
 
----testing
+---testing users with multiple visits
 with users_and_visits as (
 select
   u.mapped_user_id,
@@ -49,3 +49,5 @@ select * from users_and_visits where days_to_next_visit < 7 limit 5
 -- 4198	2024-10-15	2024-10-12	3
 -- 4198	2024-10-16	2024-10-15	1
 -- 2470	2024-10-24	2024-10-18	6
+
+---testing users with null days between visits 
