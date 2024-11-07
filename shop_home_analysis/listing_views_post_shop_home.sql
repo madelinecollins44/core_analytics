@@ -11,6 +11,7 @@ where
   event_type in ('shop_home')
 group by all 
 )
+, all_visits as (
 select
   lv.visit_id,
   count(listing_id) as total_listing_views,
@@ -21,10 +22,16 @@ from
 inner join 
   first_shop_home_view fv using (visit_id)
 where 
-    fv.first_sequence_number < lv.sequence_number -- listing views happen after shop home 
+  fv.first_sequence_number < lv.sequence_number -- listing views happen after shop home 
   and lv._date >= current_date-30
 group by all 
-
+)
+select
+  count(distinct visit_id) as visits_with_lv,
+  sum(total_listing_views) as total_lv,
+  sum(shop_home_listing_view) as shop_home_lv,
+  sum(other_listing_view) as other_lv
+from all_visits
 
 ---testing 
 with first_shop_home_view as (
