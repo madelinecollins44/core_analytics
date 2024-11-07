@@ -305,11 +305,14 @@ where
 with shops_per_visit as (
 select
   visit_id,
+  count(sequence_number) as pageviews,
   count(distinct shop_id) as visited_shops
 from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids
 group by all
 )
 select 
   count(distinct visit_id),
+  sum(pageviews) as pageviews,
   avg(visited_shops) as avg_visited_shops
 from shops_per_visit
+
