@@ -6,7 +6,7 @@ select
   u.mapped_user_id,
   e._date,
   lag(e._date) over (partition by mapped_user_id order by _date) as last_visit_date,
-  date_diff(lag(e._date) over (partition by mapped_user_id order by _date), e._date, day) as days_since_last_visit
+  date_diff(e._date, lag(e._date) over (partition by mapped_user_id order by _date), day) as days_since_last_visit
 from 
   etsy-data-warehouse-prod.weblog.events e
 left join 
