@@ -22,7 +22,7 @@ from
 inner join 
   first_shop_home_view fv using (visit_id)
 where 
-  fv.first_sequence_number < lv.sequence_number -- listing views happen after shop home 
+  fv.first_sequence_number < lv.referring_page_event_sequence_number -- listing views happen after shop home 
   and lv._date >= current_date-30
 group by all 
 )
@@ -32,6 +32,30 @@ select
   sum(shop_home_listing_view) as shop_home_lv,
   sum(other_listing_view) as other_lv
 from all_visits
+group by all
+
+--LISTING VIEWS BY REFERRING PAGE
+  with first_shop_home_view as (
+select
+  visit_id,
+  min(sequence_number) as first_sequence_number
+from 
+  etsy-data-warehouse-prod.weblog.events
+where 
+  event_type in ('shop_home')
+group by all 
+)
+select
+  referring_page_event,
+  count(listing_id) as total_listing_views,
+from 
+  etsy-data-warehouse-prod.analytics.listing_views lv
+inner join 
+  first_shop_home_view fv using (visit_id)
+where 
+  fv.first_sequence_number < lv.referring_page_event_sequence_number -- listing views happen AFTER shop home 
+  and lv._date >= current_date-30
+group by all 
 
 ---testing 
 with first_shop_home_view as (
