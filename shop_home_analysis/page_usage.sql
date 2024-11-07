@@ -299,3 +299,17 @@ where
   v._date >= current_date-30
   and e.event_type in ('shop_home')
 
+---------------------------------------------------------------------------
+--how many shops does a visit typically visit
+---------------------------------------------------------------------------
+with shops_per_visit as (
+select
+  visit_id,
+  count(distinct shop_id) as visited_shops
+from etsy-data-warehouse-dev.madelinecollins.visited_shop_ids
+group by all
+)
+select 
+  count(distinct visit_id),
+  avg(visited_shops) as avg_visited_shops
+from shops_per_visit
