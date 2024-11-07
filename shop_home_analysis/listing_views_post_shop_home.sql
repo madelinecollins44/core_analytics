@@ -31,10 +31,12 @@ select
   sum(total_listing_views) as total_lv,
   sum(shop_home_listing_view) as shop_home_lv,
   sum(other_listing_view) as other_lv,
+  avg(total_listing_views) as avg_total_lv_per_visit,
   avg(shop_home_listing_view) as avg_shop_home_lv_per_visit,
   avg(other_listing_view) as avg_other_lv_per_visit,
 from all_visits
 group by all
+  
 ---testing 
 with first_shop_home_view as (
 select
