@@ -1,8 +1,7 @@
 --------------------------------------------------------------------------------------------------
---distribution of time since last visit for shop home visitors 
+--distribution of time since last visit for shop home visitors for general traffic + landing on shop home
 ----users will be double counted if have different days between visits
 --------------------------------------------------------------------------------------------------
---all shop home traffic 
 with users_and_visits as (
 select
   u.mapped_user_id,
@@ -82,3 +81,64 @@ select distinct _date from users_and_visits where days_since_last_visit is null 
 -- 2093	2024-11-02		
 -- 2221	2024-10-08		
 -- 3338	2024-10-21		
+
+--------------------------------------------------------------------------------------------------
+--distribution of time since last visit for shop home visitors that donot land on the page
+---wanted to do it like this so dont exclude those that land on the page
+--------------------------------------------------------------------------------------------------
+  --pull out all sequence numbers of landing events
+with landing_events as (
+select
+  user_id,
+  visit_id,
+  _date,
+  sequence_number,
+  event_type,
+from 
+  etsy-data-warehouse-prod.weblog.events
+where page_view =1 
+qualify row_number () over (partition by user_id order by sequence_number) = 1-- pulling first primary event
+)
+--look at shop home views that happened AFTER the landing event
+, visits_shop_home_post_landing as (
+select
+  e.user_id,
+  e.visit_id,
+  e._date,
+from landing_events le
+inner join etsy-data-warehouse-prod.weblog.events e
+    on le.visit_id=e.visit_id
+    and le.user_id=e.user_id
+    and le.sequence_number < e.sequence_number -- everything after the landing event
+where e.event_type in ('shop_home')
+)
+, users_and_visits as (
+select
+  u.mapped_user_id,
+  e._date,
+  lag(e._date) over (partition by mapped_user_id order by e._date) as last_visit_date,
+  date_diff(e._date, lag(e._date) over (partition by mapped_user_id order by e._date), day) as days_since_last_visit
+from 
+  visits_shop_home_post_landing e
+left join 
+  `etsy-data-warehouse-prod.user_mart.user_mapping` u using (user_id)
+group by all 
+)
+select 
+  days_since_last_visit, 
+  count(distinct mapped_user_id) as unique_users,
+  count(mapped_user_id) as users,
+from 
+  users_and_visits 
+group by all 
+order by 1 asc
+
+--testing 
+  -- user_id	visit_id	_date
+-- 453664481	FLtnkjPaR5W-JNdq3qgyWQ.1729401404109.1	2024-10-20
+-- 445545202	5mS9cvxdHWPGmR0nPZ_w__XYv9nl.1730634493297.1	2024-11-03
+-- 998691047	-XsmD-GS51je9hWRQ2lRrZDX2Srr.1730407737936.1	2024-10-31
+-- 998691047	-XsmD-GS51je9hWRQ2lRrZDX2Srr.1730407737936.1	2024-10-31
+-- 640630156	inzqj70BSytRSsXe-bCSQJoXBdc0.1729920420280.1	2024-10-26
+select * from etsy-data-warehouse-prod.weblog.events where visit_id in ('FLtnkjPaR5W-JNdq3qgyWQ.1729401404109.1') and page_view=1 order by sequence_number asc
+select landing_event from etsy-data-warehouse-prod.weblog.visits where visit_id in ('-XsmD-GS51je9hWRQ2lRrZDX2Srr.1730407737936.1') and _date >= current_date-30
