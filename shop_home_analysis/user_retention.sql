@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------------------------
---how often are all users revisiting the shop_home page? 
+--distribution of time since last visit for shop home visitors 
 --------------------------------------------------------------------------------------------------
+--all shop home traffic 
 with users_and_visits as (
 select
   u.mapped_user_id,
