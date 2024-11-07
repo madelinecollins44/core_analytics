@@ -7,19 +7,24 @@ with users_and_visits as (
 select
   u.mapped_user_id,
   e._date,
-  lag(e._date) over (partition by mapped_user_id order by _date) as last_visit_date,
+  lag(e._date) over (partition by mapped_user_id order by _date) as last_visit_id,
   date_diff(e._date, lag(e._date) over (partition by mapped_user_id order by _date), day) as days_since_last_visit
 from 
   etsy-data-warehouse-prod.weblog.events e
 left join 
   `etsy-data-warehouse-prod.user_mart.user_mapping` u using (user_id)
-where event_type in ('shop_home')
+where 
+  event_type in ('shop_home')
 group by all 
 )
 select 
-  days_since_last_visit,
-  count(distinct mapped_user_id) as users
-from users_and_visits
+  days_since_last_visit, 
+  count(distinct mapped_user_id) as unique_users,
+  count(mapped_user_id) as users,
+from 
+  users_and_visits 
+-- where 
+--   mapped_user_id is not null -- am
 group by all 
 order by 1 asc
 
