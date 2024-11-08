@@ -51,3 +51,33 @@ select
   count(distinct case when unique_transactions = 20 then user_id end) as users_purchase_from_shop_20_times,  
   count(distinct case when unique_transactions = 30 then user_id end) as users_purchase_from_shop_30_times
 from purchased_from_shops
+
+------------------------------------------------------------------------------------------------------------
+--testing
+------------------------------------------------------------------------------------------------------------
+select * 
+from 
+  etsy-data-warehouse-prod.transaction_mart.transactions_visits tv
+inner join
+	etsy-data-warehouse-prod.transaction_mart.all_transactions t 
+		using (transaction_id)
+where 
+  tv.date >= current_date-365
+  and user_id = 110492431
+  and seller_user_id = 736070039
+  -- user_id	seller_user_id	unique_transactions
+-- 110492431	736070039	1
+-- 237489707	21966421	1
+-- 697420773	345387332	1
+-- 41142537	342735968	1
+-- 994626323	499669497	1
+-- 29923559	365353078	20
+-- 107218282	936909057	20
+-- 901681355	880990572	20
+-- 23140470	46773266	20
+-- 644000470	74161633	20
+-- 7175522	262736160	7
+-- 22322565	767097900	7
+-- 20203061	580326942	7
+-- 371554703	44152313	7
+-- 80859636	17613142	7
