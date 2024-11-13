@@ -57,7 +57,7 @@
       'boe_homescreen_popular_-clusters_seen',
       'scrolled_past_boe_homescreen_recs_placholder_-module_4',
       'recommendations_module_seen'
-      ----INITIAL CONTENT (SKIPPED QUIZ)
+      ----INITIAL CONTENT (COMPLETED QUIZ)
       'homescreen_top_banner_marketing_Merch3_event_viewed',
       'boe_homescreen_home_hub_viewed',
       'scrolled_past_boe_homescreen_home_hub',
