@@ -193,7 +193,7 @@ SELECT
       'favorites_onboarding_viewed'-- PRIMARY EVENT FOR THIS SCREEN.
       ) THEN '8 - Favorites Quiz'
 
-     WHEN (event_name IN ('sign_in_screen') and full_gate in ('false'))
+     WHEN (event_name IN ('sign_in_screen') and first_view in ('false'))
        THEN '9 - Sign In from Homescreen'
     
       ELSE NULL
