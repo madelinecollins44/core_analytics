@@ -111,6 +111,100 @@ where
 );
 
 ----------------------------------------------------------------------------------------------------------------------------------------
+--get browser counts for each event in the onboarding process 
+----------------------------------------------------------------------------------------------------------------------------------------
+with first_browser_visits as (
+  select 
+    browser_id, 
+    visit_id 
+from etsy-data-warehouse-dev.madelinecollins.boe_first_visits 
+  where visit_rnk = 1 
+  and _date >= current_date-30
+  and event_source in ('ios')
+)
+--of those browsers, how many completed each onboarding event 
+ , event_counts as (
+  select
+    event_name,
+    first_view,
+    full_gate,
+    v.visit_id,
+    v.browser_id,
+from first_browser_visits v 
+left join etsy-data-warehouse-dev.madelinecollins.app_onboarding_events  e
+      using (visit_id)
+  group by all
+)
+SELECT
+    event_name,
+    CASE 
+      WHEN event_name  IN (
+      'sign_in_screen', -- PRIMARY EVENT FOR THIS SCREEN. distinction made by fullgate property, fullgate = true 
+      'continue_as_guest_tapped', -- continue as guest 
+      'BOE_social_sign_in_tapped',-- log in w socials BUT fires across screens 
+      'BOE_etsy_sign_in_tapped' -- log in w email  BUT fires across screens 
+      ) THEN '1 - Log In Splash Screen'
+      
+      WHEN event_name  IN (
+      'join_submit',
+      'BOE_email_sign_in_webview_cancelled',
+      'register_view'
+      ) THEN '2 - Registration Web View'
+     
+      WHEN event_name  IN (
+      'signin_submit', -- PRIMARY EVENT FOR THIS SCREEN.
+      'magic_link_click',
+      'magic_link_send',
+      'magic_link_redeemed',
+      'magic_link_error',
+      'forgot_password',
+      'forgot_password_view',
+      'forgot_password_email_sent',
+      'reset_password',
+      'keep_me_signed_in_checked',
+      'keep_me_signed_in_unchecked',
+      'login',
+      'BOE_email_sign_in_webview_cancelled',
+      'login_view' -- would be great to use this but unsure if this fires in beacons table
+      ) THEN '3 - Sign In Web View'
+      
+      WHEN (event_name IN ('homescreen_complementary') and first_view = "true")
+        THEN '4 - First Homescreen View'
+      
+      WHEN event_name  IN (
+      'notification_registration_interstitial_enable_tapped',
+      'notification_registration_interstitial_dismiss_tapped',
+      'update_setting',
+      'notification_registration_interstitial_viewed' -- PRIMARY EVENT FOR THIS SCREEN.
+      ) THEN '5 - Notifications Opt In pt 1'
+      
+      WHEN event_name  IN (
+      'push_prompt_permission_granted', -- PRIMARY EVENT FOR THIS SCREEN.
+      'push_prompt_permission_denied' -- PRIMARY EVENT FOR THIS SCREEN.
+      ) THEN '6 - Notifications Opt In pt 2'
+      
+      WHEN event_name  IN (
+      'app_tracking_transparency_system_prompt_denied_tapped', -- PRIMARY EVENT FOR THIS SCREEN.
+      'app_tracking_transparency_system_prompt_authorized_tapped' -- PRIMARY EVENT FOR THIS SCREEN.
+      ) THEN '7 - App Tracking Transparency Prompt'
+      
+      WHEN event_name  IN (
+      'favorites_onboarding_skip_button_tapped',
+      'favorites_onboarding_done_button_tapped',
+      'favorites_onboarding_viewed'-- PRIMARY EVENT FOR THIS SCREEN.
+      ) THEN '8 - Favorites Quiz'
+
+     WHEN (event_name IN ('sign_in_screen') and full_gate in ('false'))
+       THEN '9 - Sign In from Homescreen'
+    
+      ELSE NULL
+    END as screen,
+    count(distinct browser_id) as browsers
+FROM 
+  event_counts
+group by all 
+ORDER BY screen
+----------------------------------------------------------------------------------------------------------------------------------------
 --test to see how often login view (event for web sign in) fires before homescreen to see if login view is reliable event for that screen
 ----------------------------------------------------------------------------------------------------------------------------------------
 with agg as (
