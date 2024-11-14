@@ -109,3 +109,22 @@ where
     -- -- this is for homescreen post sign in page )
   group by all 
 );
+
+----------------------------------------------------------------------------------------------------------------------------------------
+--test to see how often login view (event for web sign in) fires before homescreen to see if login view is reliable event for that screen
+----------------------------------------------------------------------------------------------------------------------------------------
+with agg as (
+select  
+  visit_id,
+  case when beacon.event_name  in ('login_view') then sequence_number end as login_view_sequence_number,
+  case when (beacon.event_name = "homescreen_complementary" and (select value from unnest(beacon.properties.key_value) where key = "first_view") in ("true")) then sequence_number end as homescreen_sequence_number
+from etsy-visit-pipe-prod.canonical.visit_id_beacons 
+where date(_partitiontime) >= current_date-30
+)
+select 
+  count(distinct case when login_view_sequence_number < homescreen_sequence_number then visit_id end) as login_before_home,
+  count(distinct case when login_view_sequence_number is not null then visit_id end) visits_with_login_view,
+  count(distinct case when homescreen_sequence_number is not null then visit_id end) visits_with_homescreen,
+  count(distinct visit_id) as unique_visits 
+from agg
+group by all 
