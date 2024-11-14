@@ -202,4 +202,4 @@ SELECT
 FROM 
   event_counts
 group by all 
-ORDER BY screen
+ORDER BY screen, event_name
