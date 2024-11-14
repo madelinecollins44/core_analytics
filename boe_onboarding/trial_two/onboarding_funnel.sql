@@ -164,8 +164,7 @@ SELECT
       'keep_me_signed_in_checked',
       'keep_me_signed_in_unchecked',
       'login',
-      'BOE_email_sign_in_webview_cancelled',
-      'login_view' -- would be great to use this but unsure if this fires in beacons table
+      'BOE_email_sign_in_webview_cancelled'
       ) THEN '3 - Sign In Web View'
       
       WHEN (event_name IN ('homescreen_complementary') and first_view = "true")
