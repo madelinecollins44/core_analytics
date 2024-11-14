@@ -138,11 +138,11 @@ left join etsy-data-warehouse-dev.madelinecollins.app_onboarding_events  e
 SELECT
     event_name,
     CASE 
-      WHEN event_name  IN (
-      'sign_in_screen', -- PRIMARY EVENT FOR THIS SCREEN. distinction made by fullgate property, fullgate = true 
+     WHEN (event_name IN ('sign_in_screen') and full_gate in ('true')) -- PRIMARY EVENT FOR THIS SCREEN. distinction made by fullgate property, fullgate = true 
+      or (event_name  IN (
       'continue_as_guest_tapped', -- continue as guest 
       'BOE_social_sign_in_tapped',-- log in w socials BUT fires across screens 
-      'BOE_etsy_sign_in_tapped' -- log in w email  BUT fires across screens 
+      'BOE_etsy_sign_in_tapped') -- log in w email  BUT fires across screens 
       ) THEN '1 - Log In Splash Screen'
       
       WHEN event_name  IN (
@@ -193,7 +193,7 @@ SELECT
       'favorites_onboarding_viewed'-- PRIMARY EVENT FOR THIS SCREEN.
       ) THEN '8 - Favorites Quiz'
 
-     WHEN (event_name IN ('sign_in_screen') and first_view in ('false'))
+     WHEN (event_name IN ('sign_in_screen') and full_gate in ('false'))
        THEN '9 - Sign In from Homescreen'
     
       ELSE NULL
