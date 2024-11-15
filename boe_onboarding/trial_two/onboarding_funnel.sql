@@ -47,7 +47,7 @@ where
       ----REGISTRAION WEB VIEW
       'join_submit',
       'BOE_email_sign_in_webview_cancelled',
-      'register_view'
+      'register_view',
       ----SIGN IN WEB VIEW
       'signin_submit', -- PRIMARY EVENT FOR THIS SCREEN.
       'magic_link_click',
