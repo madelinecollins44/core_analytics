@@ -66,3 +66,23 @@ from agg
 group by all 
 -- login_before_home	visits_with_login_view	visits_with_homescreen	unique_visits
 -- 441213	753760	1496535	2043862
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+--how often does register_view from the register from web screen for? 
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+ with first_browser_visits as (
+  select 
+    browser_id, 
+    visit_id 
+from etsy-data-warehouse-dev.madelinecollins.boe_first_visits 
+  where visit_rnk = 1 
+  and _date >= current_date-30
+  and event_source in ('ios')
+)
+ select
+    count(distinct visit_id) as visits,
+    count(distinct beacon.browser_id) as browsers,
+  from etsy-visit-pipe-prod.canonical.visit_id_beacons 
+  where 
+    date(_partitiontime) >= current_date-30
+    and beacon.event_name in ('register_view')
