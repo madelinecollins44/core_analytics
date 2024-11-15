@@ -39,7 +39,6 @@ group by all
 with first_browser_visits as (
   select 
     browser_id, 
-    new_visitor,
     visit_id 
 from etsy-data-warehouse-dev.madelinecollins.boe_first_visits 
   where visit_rnk = 1 
@@ -49,18 +48,21 @@ from etsy-data-warehouse-dev.madelinecollins.boe_first_visits
 , agg as (
 select  
   visit_id,
-  case when event_name  in ('login_view') then sequence_number end as login_view_sequence_number,
-  case when event_name = "homescreen_complementary" and first_view in ("true") then sequence_number end as homescreen_sequence_number
-from first_browser_visits v 
-left join etsy-data-warehouse-dev.madelinecollins.app_onboarding_events  e
+  min(case when event_name  in ('login_view') then sequence_number end) as first_login_view_sequence_number,
+  min(case when event_name = "homescreen_complementary" and first_view in ("true") then sequence_number end) as first_homescreen_sequence_number
+from 
+  first_browser_visits v 
+left join 
+  (select * from etsy-data-warehouse-dev.madelinecollins.app_onboarding_events where event_name in ('login_view','homescreen_complementary')) e
       using (visit_id)
+group by all
 )
 select 
-  count(distinct case when login_view_sequence_number < homescreen_sequence_number then visit_id end) as login_before_home,
-  count(distinct case when login_view_sequence_number is not null then visit_id end) visits_with_login_view,
-  count(distinct case when homescreen_sequence_number is not null then visit_id end) visits_with_homescreen,
+  count(distinct case when first_login_view_sequence_number < first_homescreen_sequence_number then visit_id end) as login_before_home,
+  count(distinct case when first_login_view_sequence_number is not null then visit_id end) visits_with_login_view,
+  count(distinct case when first_homescreen_sequence_number is not null then visit_id end) visits_with_homescreen,
   count(distinct visit_id) as unique_visits 
 from agg
 group by all 
 -- login_before_home	visits_with_login_view	visits_with_homescreen	unique_visits
--- 0	                      745459	                1482734              	2027134
+-- 441213	753760	1496535	2043862
