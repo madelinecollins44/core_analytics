@@ -5,23 +5,32 @@
 -----sign in event without a full_gate property = older versions of app? 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
 --within the first visit for each browser in the last 30 days, what is the distribution of full_gate properties? 
+with first_browser_visits as (
+  select 
+    browser_id, 
+    visit_id 
+from etsy-data-warehouse-dev.madelinecollins.boe_first_visits 
+  where visit_rnk = 1 
+  and _date >= current_date-30
+  and event_source in ('ios')
+)
 select      
   event_name,
-  first_view,
   full_gate,
   count(distinct browser_id) as browsers,
   count(distinct visit_id) as visits
 from 
-  `etsy-data-warehouse-dev.madelinecollins.boe_first_visits`
+  first_browser_visits
 inner join 
   etsy-data-warehouse-dev.madelinecollins.app_onboarding_events 
   using(visit_id)
-where event_name in ('sign_in_screen')
+where 
+  event_name in ('sign_in_screen')
 group by all
--- event_name	first_view	full_gate	browsers	visits
--- sign_in_screen		false	169248	187132
--- sign_in_screen			1193820	1594428
--- sign_in_screen		true	3108726	4259077
+-- event_name	full_gate	browsers	visits
+-- sign_in_screen	false	60844	60844
+-- sign_in_screen	true	1593959	1593959
+-- sign_in_screen		409446	409446
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
