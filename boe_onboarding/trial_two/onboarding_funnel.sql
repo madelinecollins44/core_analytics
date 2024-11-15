@@ -130,6 +130,7 @@ from etsy-data-warehouse-dev.madelinecollins.boe_first_visits
     full_gate,
     v.visit_id,
     v.browser_id,
+    e.sequence_number
 from first_browser_visits v 
 left join etsy-data-warehouse-dev.madelinecollins.app_onboarding_events  e
       using (visit_id)
