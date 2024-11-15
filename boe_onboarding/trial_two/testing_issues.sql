@@ -86,3 +86,35 @@ from etsy-data-warehouse-dev.madelinecollins.boe_first_visits
   where 
     date(_partitiontime) >= current_date-30
     and beacon.event_name in ('register_view')
+ 
+  -------testing
+  with first_browser_visits as (
+  select 
+    browser_id, 
+    visit_id 
+from etsy-data-warehouse-dev.madelinecollins.boe_first_visits 
+  where visit_rnk = 1 
+  and _date >= current_date-30
+  and event_source in ('ios')
+)
+  
+select * from first_browser_visits where visit_id in ('776C33ECB47249BE9F206475F7E0.1730779804960.1')
+ select
+    a.visit_id,
+    max(case when b.visit_id is null then 1 else 0 end) as first_visit
+  from etsy-visit-pipe-prod.canonical.visit_id_beacons  a
+  left join first_browser_visits b using (visit_id)
+  where 
+    date(_partitiontime) >= current_date-30
+    and beacon.event_name in ('register_view')
+  group by all 
+  order by 2 desc
+  ---visits that arent in first visit on boe but did get a register_view event
+--776C33ECB47249BE9F206475F7E0.1730779804960.1
+--F39674EF54034800B50F925580F7.1730569856004.1
+--5C20B4B8F2EF454EB655F6F7902C
+
+select * from etsy-visit-pipe-prod.canonical.visit_id_beacons where visit_id in ('776C33ECB47249BE9F206475F7E0.1730779804960.1') and 
+    date(_partitiontime) >= current_date-30 order by sequence_number asc
+
+select * from etsy-data-warehouse-prod.weblog.visits where visit_id in ('776C33ECB47249BE9F206475F7E0.1730779804960.1') and _date >= current_date-30
